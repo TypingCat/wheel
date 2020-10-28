@@ -1,0 +1,47 @@
+<root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6">
+      <Sequence name="NavigateWithReplanning">
+        <RateController hz="1.0">
+          <Fallback>
+            <GoalReached/>
+            <ComputePathToPose goal="${goal}" path="${path}"/>
+            <ClearEntireCostmap service_name="/global_costmap/clear_entirely_global_costmap"/>
+          </Fallback>
+        </RateController>
+        <FollowPath path="${path}"/>
+      </Sequence>
+      <SequenceStar name="RecoveryActions">
+        <ClearEntireCostmap service_name="/local_costmap/clear_entirely_local_costmap"/>
+        <ClearEntireCostmap service_name="/global_costmap/clear_entirely_global_costmap"/>
+      </SequenceStar>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>
+
+<!-- <root main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="6" name="NavigateRecovery">
+      <PipelineSequence name="NavigateWithReplanning">
+        <RateController hz="1.0">
+          <RecoveryNode number_of_retries="1" name="ComputePathToPose">
+            <ComputePathToPose goal="{goal}" path="{path}" planner_id="GridBased"/>
+            <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
+          </RecoveryNode>
+        </RateController>
+        <RecoveryNode number_of_retries="1" name="FollowPath">
+          <FollowPath path="{path}" controller_id="FollowPath"/>
+          <ClearEntireCostmap name="ClearLocalCostmap-Context" service_name="local_costmap/clear_entirely_local_costmap"/>
+        </RecoveryNode>
+      </PipelineSequence>
+      <ReactiveFallback name="RecoveryFallback">
+        <GoalUpdated/>
+        <SequenceStar name="RecoveryActions">
+          <ClearEntireCostmap name="ClearLocalCostmap-Subtree" service_name="local_costmap/clear_entirely_local_costmap"/>
+          <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
+          <Wait wait_duration="5"/>
+        </SequenceStar>
+      </ReactiveFallback>
+    </RecoveryNode>
+  </BehaviorTree>
+</root> -->
