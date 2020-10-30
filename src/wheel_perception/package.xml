@@ -3,7 +3,7 @@
 <package format="3">
   <name>wheel_perception</name>
   <version>0.0.0</version>
-  <description>TPerception with image processing</description>
+  <description>Perception with image processing</description>
   <maintainer email="fini@kakao.com">fini</maintainer>
   <license>GNU General Public License v2.0</license>
 

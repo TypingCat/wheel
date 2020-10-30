@@ -13,10 +13,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='kist',
+    maintainer='fini',
     maintainer_email='fini@kakao.com',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Perception with image processing',
+    license='GNU General Public License v2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [

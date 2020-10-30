@@ -2,7 +2,7 @@
 ROS2 package that develops wheeled mobile robot capabilities
 
 
-## Usage
+## Simple Usage
 ``` bash
 ros2 launch wheel wakeup.launch.py
 ros2 launch wheel getup.launch.py
