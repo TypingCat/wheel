@@ -12,20 +12,15 @@ turtlebot3_node:
 
     motors:
       profile_acceleration_constant: 214.577
-
-      # [rev/min2]
-      # ref) http://emanual.robotis.com/docs/en/dxl/x/xl430-w250/#profile-acceleration
       profile_acceleration: 0.0
 
     sensors:
       bumper_1: false
       bumper_2: false
-
       illumination: false
-
       ir: false
-
       sonar: false
+
 
 diff_drive_controller:
   ros__parameters:

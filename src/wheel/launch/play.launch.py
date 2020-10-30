@@ -25,7 +25,7 @@ def generate_launch_description():
         Node(
             package='image_transport',
             node_executable='republish',
-            node_name='image_transport_subscribe_raw',
+            node_name='image_transport_uncompress_raw',
             arguments=['compressed', 'raw'],
             output='screen',
             remappings=[

@@ -13,9 +13,4 @@ def generate_launch_description():
             node_name='realsense_ros2_camera',
             output='screen',
             remappings=[('tf_static', 'tf_realsense')]),
-        Node(
-            package='wheel_perception',
-            node_executable='throttle',
-            node_name='wheel_perception_throttle',
-            output='screen'),
     ])

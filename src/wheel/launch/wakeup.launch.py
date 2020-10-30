@@ -20,4 +20,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([
                 os.path.join(get_package_share_directory('wheel'), 'launch'), '/turtlebot/camera.launch.py'])),
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([
+                os.path.join(get_package_share_directory('wheel'), 'launch'), '/turtlebot/slam.launch.py']),
+            launch_arguments={'use_sim_time': use_sim_time}.items()),
     ])

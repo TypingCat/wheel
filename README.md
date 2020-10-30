@@ -23,10 +23,15 @@ ros2 launch wheel play.launch.py
 - Python 3.8.3
     - torch 1.6.1
 - ROS2 dashing
-    - [turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/ros2_setup/): [rplidar_ros](https://github.com/allenh1/rplidar_ros.git), [ros2_intel_realsense](https://github.com/intel/ros2_intel_realsense)
+    - [turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/ros2_setup/)
+    - [rplidar_ros](https://github.com/allenh1/rplidar_ros.git) 2.0.0
+    - [ros2_intel_realsense](https://github.com/intel/ros2_intel_realsense)
     - [cartographer_ros](https://google-cartographer-ros.readthedocs.io/en/latest/compilation.html#building-installation)
 - Unity 2019.4.1f1
 
 ``` bash
-source ~/wheel/install/local_setup.bash
+git clone https://github.com/finiel/wheel.git
+cd wheel
+colcon build --symlink-install
+source install/local_setup.bash
 ```
