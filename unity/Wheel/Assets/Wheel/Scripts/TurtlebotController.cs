@@ -40,13 +40,14 @@ public class TurtlebotController : MonoBehaviourRosNode
         commandVelocityAngular = Vector3.zero;
     }
 
+    // Update robot position by velocity
     private void FixedUpdate()
     {
         SpinSome();
 
-        Vector3 deltaPosition = commandVelocityLinear * Time.deltaTime;
+        Vector3 deltaPosition = commandVelocityLinear * Time.fixedDeltaTime;
         deltaPosition = BaseRigidbody.transform.TransformDirection(deltaPosition);
-        Quaternion deltaRotation = Quaternion.Euler(-commandVelocityAngular * Mathf.Rad2Deg * Time.deltaTime);
+        Quaternion deltaRotation = Quaternion.Euler(-commandVelocityAngular * Mathf.Rad2Deg * Time.fixedDeltaTime);
 
         BaseRigidbody.MovePosition(BaseRigidbody.position + deltaPosition);
         BaseRigidbody.MoveRotation(BaseRigidbody.rotation * deltaRotation);

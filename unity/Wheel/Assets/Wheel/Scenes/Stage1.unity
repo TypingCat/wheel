@@ -649,7 +649,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1770250402}
-  - component: {fileID: 1770250403}
+  - component: {fileID: 1770250404}
   m_Layer: 0
   m_Name: RosInterface
   m_TagString: Untagged
@@ -671,25 +671,23 @@ Transform:
   m_Father: {fileID: 940893144}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1770250403
+--- !u!114 &1770250404
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1770250401}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 430d2252943b8984b8cca9e0efb04589, type: 3}
+  m_Script: {fileID: 11500000, guid: 217116b5d955964649e0efc34f9f6fc7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NodeName: unity_teleop
+  NodeName: keyboard_teleop
   CommandVelocityTopic: cmd_vel
-  MaxForwardVelocity: 0.5
-  MaxSidewaysVelocity: 0
-  MaxRotationalVelocity: 1
-  PublishingFrequency: 10
-  UseHolonomicControls: 0
+  MaxLinearVelocity: 0.5
+  MaxAngularVelocity: 1
+  PublishingFrequency: 30
 --- !u!1 &1890678282
 GameObject:
   m_ObjectHideFlags: 0
