@@ -2,13 +2,12 @@
 
 import rclpy
 from rclpy.node import Node
-from my_msgs.msg import Add
 
 
 class Unity(Node):
 
     def __init__(self):
-        super().__init__('unity')
+        super().__init__('wheel_navigation_unity')
         print('Hi Unity!')
         
 

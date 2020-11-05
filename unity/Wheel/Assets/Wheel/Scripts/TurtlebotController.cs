@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using rclcs;
 
+
 [RequireComponent(typeof(Rigidbody))]
 public class TurtlebotController : MonoBehaviourRosNode
 {
@@ -20,10 +21,8 @@ public class TurtlebotController : MonoBehaviourRosNode
 
     protected override void StartRos()
     {
-        commandVelocitySubscription = node.CreateSubscription<geometry_msgs.msg.Twist>(
-            CommandVelocityTopic,
-            (msg) =>
-            {
+        commandVelocitySubscription =
+            node.CreateSubscription<geometry_msgs.msg.Twist>(CommandVelocityTopic, (msg) => {
                 commandVelocityLinear = msg.Linear.Ros2Unity(); 
                 commandVelocityAngular = msg.Angular.Ros2Unity();
             });
@@ -31,8 +30,7 @@ public class TurtlebotController : MonoBehaviourRosNode
 
     private void Start()
     {
-        if (BaseRigidbody == null)
-        {
+        if(BaseRigidbody == null) {
             BaseRigidbody = GetComponent<Rigidbody>();
         }
 
