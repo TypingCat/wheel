@@ -11,16 +11,24 @@ public class TurtlebotAgent : Agent
 
     void Start()
     {
-        Debug.Log("!");
+        Debug.Log("Start turtlebot agent");
     }
 
     public GameObject target;
     public GameObject plane;
+
     private int episodeStep;
     public int maxEpisodeStep = 2000;
     public override void OnEpisodeBegin()
     {
+        Debug.Log("Episode begin");
+
         episodeStep = 0;
+
+        // float x = plane.transform.localScale.x;
+        // float y = plane.transform.localScale.y;
+        // float z = plane.transform.localScale.z;
+        // Debug.Log(x.ToString() + y.ToString() + z.ToString());
 
         // // Respawn target
         // target.transform.localPosition = new Vector3(
@@ -31,17 +39,22 @@ public class TurtlebotAgent : Agent
 
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Observe relative pose of target
-        float distanceToTarget = Vector3.Distance(
-            this.transform.localPosition, target.transform.localPosition);
-        float angleToTarget = Mathf.Rad2Deg * Mathf.Atan2(
-            target.transform.localPosition.x - this.transform.localPosition.x,
-            target.transform.localPosition.z - this.transform.localPosition.z)
-            - this.transform.localEulerAngles.y;
-        angleToTarget = ((angleToTarget + 540) % 360 - 180) * Mathf.Deg2Rad;
+        Debug.Log("Collect observations");
+        
+        float empty = 1.2f;
+        sensor.AddObservation(empty);
 
-        sensor.AddObservation(distanceToTarget);
-        sensor.AddObservation(angleToTarget);
+        // Observe relative pose of target
+        // float distanceToTarget = Vector3.Distance(
+        //     this.transform.localPosition, target.transform.localPosition);
+        // float angleToTarget = Mathf.Rad2Deg * Mathf.Atan2(
+        //     target.transform.localPosition.x - this.transform.localPosition.x,
+        //     target.transform.localPosition.z - this.transform.localPosition.z)
+        //     - this.transform.localEulerAngles.y;
+        // angleToTarget = ((angleToTarget + 540) % 360 - 180) * Mathf.Deg2Rad;
+
+        // sensor.AddObservation(distanceToTarget);
+        // sensor.AddObservation(angleToTarget);
         // sensor.AddObservation(Mathf.Sin(angleToTarget));
         // sensor.AddObservation(Mathf.Cos(angleToTarget));
     }
@@ -51,6 +64,8 @@ public class TurtlebotAgent : Agent
     // public float maxAngulerVelocity = 2.84f;   // 2.84 [rad/s]
     public override void OnActionReceived(float[] vectorAction)
     {
+        Debug.Log("On action received");
+
         episodeStep += 1;
 
         // Move robot body
