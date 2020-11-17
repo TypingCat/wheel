@@ -5,25 +5,23 @@ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 
-
 public class TurtlebotAgent : Agent
 {
-
     void Start()
     {
-        Debug.Log("Start turtlebot agent");
+        Debug.Log("Start");
     }
 
     public GameObject target;
     public GameObject plane;
 
-    private int episodeStep;
-    public int maxEpisodeStep = 2000;
+    // private int episodeStep;
+    // public int maxEpisodeStep = 2000;
     public override void OnEpisodeBegin()
     {
-        Debug.Log("Episode begin");
+        Debug.Log("OnEpisodeBegin");
 
-        episodeStep = 0;
+        // episodeStep = 0;
 
         // float x = plane.transform.localScale.x;
         // float y = plane.transform.localScale.y;
@@ -36,10 +34,10 @@ public class TurtlebotAgent : Agent
         //     0.1f,
         //     4*Random.value - 2);
     }
-
+    
     public override void CollectObservations(VectorSensor sensor)
     {
-        Debug.Log("Collect observations");
+        Debug.Log("CollectObservations");
         
         float empty = 1.2f;
         sensor.AddObservation(empty);
@@ -64,9 +62,9 @@ public class TurtlebotAgent : Agent
     // public float maxAngulerVelocity = 2.84f;   // 2.84 [rad/s]
     public override void OnActionReceived(float[] vectorAction)
     {
-        Debug.Log("On action received");
+        Debug.Log("OnActionReceived");
 
-        episodeStep += 1;
+        // episodeStep += 1;
 
         // Move robot body
         // Vector3 deltaPosition = this.transform.TransformDirection(
@@ -77,17 +75,17 @@ public class TurtlebotAgent : Agent
         // this.GetComponent<Rigidbody>().MoveRotation(this.transform.rotation * deltaRotation);
         
         // Rewarding
-        // float reward = -0.05f;
+        float reward = -0.05f;
         // float distanceToTarget = Vector3.Distance(
         //     this.transform.localPosition, target.transform.localPosition);
         // if(distanceToTarget < 0.3f) reward += 15;
         // if(countCollisionEnter > 0) reward -= 20;      
         // if(Mathf.Abs(vectorAction[0]) > 0.5f) reward -= 0.15f * Mathf.Abs(vectorAction[0]);
         // if(vectorAction[1] < -0.5f) reward += 0.15f * vectorAction[1];
-        // AddReward(reward);
+        AddReward(reward);
 
         // Check episode end conditions
-        if(episodeStep > maxEpisodeStep) EndEpisode();
+        // if(episodeStep > maxEpisodeStep) EndEpisode();
         // else if(distanceToTarget < 0.3f) EndEpisode();
         // else if(countCollisionEnter > 0) {
         //     countCollisionEnter = 0;

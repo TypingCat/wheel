@@ -28,7 +28,7 @@ ros2 launch wheel play.launch.py
     - [ros2_intel_realsense](https://github.com/intel/ros2_intel_realsense)
     - [cartographer_ros](https://google-cartographer-ros.readthedocs.io/en/latest/compilation.html#building-installation)
 - Unity 2019.4.1f1
-    - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) 1.5.0
+    - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) release_9
     - [VSCode](https://assetstore.unity.com/packages/tools/utilities/vscode-45320?locale=ko-KR)
 
 ``` bash
