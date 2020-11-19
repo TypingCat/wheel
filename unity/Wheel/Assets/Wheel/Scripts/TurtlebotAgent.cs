@@ -39,8 +39,10 @@ public class TurtlebotAgent : Agent
     {
         Debug.Log("CollectObservations");
         
-        float empty = 1.2f;
+        float empty = 1.3f;
         sensor.AddObservation(empty);
+        Vector3 test = new Vector3(1, 2, 3);
+        sensor.AddObservation(test);
 
         // Observe relative pose of target
         // float distanceToTarget = Vector3.Distance(
