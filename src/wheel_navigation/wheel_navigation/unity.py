@@ -36,7 +36,7 @@ class Unity(Node):
         while(len(exp) < num_agents):
             self.env.step()
             exp = self.get_experience(exp)
-            print(".", end='')
+            print(".", end="")
         self.exp = exp
         self.notice("start")
 
@@ -44,7 +44,7 @@ class Unity(Node):
         super().__init__('wheel_navigation_unity')
         self.count = 0
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
-        self.timer = self.create_timer(1, self.timer_callback)
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
     def __del__(self):
         try:
@@ -61,7 +61,7 @@ class Unity(Node):
         # Set action
         act = [2, 1]
         # self.env.set_actions(self.behavior, act)
-
+        print(exp)
         # Publish experience
         self.publish_sample(exp, act)
         self.exp = exp

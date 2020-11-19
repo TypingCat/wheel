@@ -35,14 +35,12 @@ public class TurtlebotAgent : Agent
         //     4*Random.value - 2);
     }
     
+    public LaserScanner laserScanner;
     public override void CollectObservations(VectorSensor sensor)
     {
         Debug.Log("CollectObservations");
         
-        float empty = 1.3f;
-        sensor.AddObservation(empty);
-        Vector3 test = new Vector3(1, 2, 3);
-        sensor.AddObservation(test);
+        sensor.AddObservation(laserScanner.Scan().Ranges);
 
         // Observe relative pose of target
         // float distanceToTarget = Vector3.Distance(
