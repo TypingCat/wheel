@@ -1564,7 +1564,7 @@ MonoBehaviour:
   ScanLinkName: 
   RangeMinimum: 0.05
   RangeMaximum: 25
-  ApertureAngle: 360
+  ApertureAngle: 359.64
   ScanningFrequency: 10
   AngularResolution: 0.36
   UseTimeIncrement: 1
@@ -2514,6 +2514,7 @@ MonoBehaviour:
   MaxStep: 1000
   target: {fileID: 0}
   plane: {fileID: 0}
+  baseFootprint: {fileID: 7268297910095336672}
   laserScanner: {fileID: 2619945327170263593}
 --- !u!114 &4899667534335699125
 MonoBehaviour:
@@ -2528,13 +2529,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 1000
+    VectorObservationSize: 1007
     NumStackedVectorObservations: 1
     VectorActionSize: 02000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 1
   m_Model: {fileID: 0}
-  m_InferenceDevice: 0
+  m_InferenceDevice: 1
   m_BehaviorType: 0
   m_BehaviorName: Turtlebot
   TeamId: 0

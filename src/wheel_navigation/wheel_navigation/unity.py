@@ -61,7 +61,7 @@ class Unity(Node):
         # Set action
         act = [2, 1]
         # self.env.set_actions(self.behavior, act)
-        print(exp)
+        # print(exp)
         # Publish experience
         self.publish_sample(exp, act)
         self.exp = exp

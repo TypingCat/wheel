@@ -7,72 +7,97 @@ using Unity.MLAgents.Sensors;
 
 public class TurtlebotAgent : Agent
 {
+    public GameObject target;
+    public GameObject plane;
+    public Transform baseFootprint;
+    public LaserScanner laserScanner;
+
     void Start()
     {
         Debug.Log("Start");
+
+        preRobotPose = GetPose(baseFootprint);
     }
 
-    public GameObject target;
-    public GameObject plane;
-
-    // private int episodeStep;
-    // public int maxEpisodeStep = 2000;
     public override void OnEpisodeBegin()
     {
         Debug.Log("OnEpisodeBegin");
 
-        // episodeStep = 0;
+        respawnTarget(1);
+    }
 
-        // float x = plane.transform.localScale.x;
-        // float y = plane.transform.localScale.y;
-        // float z = plane.transform.localScale.z;
-        // Debug.Log(x.ToString() + y.ToString() + z.ToString());
-
-        // // Respawn target
-        // target.transform.localPosition = new Vector3(
-        //     4*Random.value - 2,
-        //     0.1f,
-        //     4*Random.value - 2);
+    // Randomly respawn target in the plane
+    private void respawnTarget(float margin)
+    {
+        Vector3 respawnRadius = new Vector3(
+            (plane.transform.localScale.x * 10) / 2 - margin,
+            0,
+            (plane.transform.localScale.z * 10) / 2 - margin
+        );
+        target.transform.localPosition = new Vector3(
+            (respawnRadius.x * 2 * Random.value) - respawnRadius.x,
+            0,
+            (respawnRadius.z * 2 * Random.value) - respawnRadius.z
+        );
     }
     
-    public LaserScanner laserScanner;
     public override void CollectObservations(VectorSensor sensor)
     {
-        Debug.Log("CollectObservations");
+        // Debug.Log("CollectObservations");
         
-        sensor.AddObservation(laserScanner.Scan().Ranges);
+        // Observe robot dynamics
+        Vector3 robotPose = GetPose(baseFootprint);
+        Vector2 robotVelocity = GetVelocity(robotPose);
+        sensor.AddObservation(robotPose);
+        sensor.AddObservation(robotVelocity);
 
         // Observe relative pose of target
-        // float distanceToTarget = Vector3.Distance(
-        //     this.transform.localPosition, target.transform.localPosition);
-        // float angleToTarget = Mathf.Rad2Deg * Mathf.Atan2(
-        //     target.transform.localPosition.x - this.transform.localPosition.x,
-        //     target.transform.localPosition.z - this.transform.localPosition.z)
-        //     - this.transform.localEulerAngles.y;
-        // angleToTarget = ((angleToTarget + 540) % 360 - 180) * Mathf.Deg2Rad;
+        Vector2 targetPose = GetRelativePose(robotPose, GetPose(target.transform));
+        sensor.AddObservation(targetPose);
 
-        // sensor.AddObservation(distanceToTarget);
-        // sensor.AddObservation(angleToTarget);
-        // sensor.AddObservation(Mathf.Sin(angleToTarget));
-        // sensor.AddObservation(Mathf.Cos(angleToTarget));
+        // Observe scan ranges
+        sensor.AddObservation(laserScanner.Scan().Ranges);
+
+        // Log
+        preRobotPose = robotPose;
+        // Debug.Log(robotPose);
+        // Debug.Log(robotVelocity);
+        // Debug.Log(targetPose);
+    }
+
+    // Get 2D pose in the right-handed coordinate system
+    private Vector3 GetPose(Transform tf)
+    {
+        return new Vector3(
+            tf.localPosition.x,
+            tf.localPosition.z,
+            -((tf.localEulerAngles.y + 450) % 360 - 180) * Mathf.Deg2Rad
+        );
+    }
+
+    // Get linear and angular velocity
+    private Vector3 preRobotPose;
+    private Vector2 GetVelocity(Vector3 pose)
+    {
+        return new Vector2(
+            Vector3.Distance(preRobotPose, pose) / (Time.deltaTime * 10),
+            (pose.z - preRobotPose.z) / (Time.deltaTime * 10)
+        );
+    }
+
+    // Get relative pose from p0 to p1 in the cylindrical coordinate system
+    private Vector2 GetRelativePose(Vector3 p0, Vector3 p1)
+    {
+        float distance = Vector3.Distance(p0, p1);
+        float angle = Mathf.Atan2(p1.y - p0.y, p1.x - p0.x) - p0.z;
+        angle = ((angle + (3 * Mathf.PI)) % (2 * Mathf.PI) - Mathf.PI);
+        return new Vector2(distance, angle);
     }
 
     // Move, rewarding, and check episode end
-    // public float maxLinearVelocity = 0.88f;    // 0.22 [m/s]
-    // public float maxAngulerVelocity = 2.84f;   // 2.84 [rad/s]
     public override void OnActionReceived(float[] vectorAction)
     {
-        Debug.Log("OnActionReceived");
-
-        // episodeStep += 1;
-
-        // Move robot body
-        // Vector3 deltaPosition = this.transform.TransformDirection(
-        //     new Vector3(0, 0, maxLinearVelocity * vectorAction[1] * Time.deltaTime));
-        // Quaternion deltaRotation = Quaternion.Euler(
-        //     new Vector3(0, maxAngulerVelocity * vectorAction[0] * Time.deltaTime * 180 / Mathf.PI, 0));
-        // this.GetComponent<Rigidbody>().MovePosition(this.transform.position + deltaPosition);
-        // this.GetComponent<Rigidbody>().MoveRotation(this.transform.rotation * deltaRotation);
+        // Debug.Log("OnActionReceived");
         
         // Rewarding
         float reward = -0.05f;
@@ -93,11 +118,4 @@ public class TurtlebotAgent : Agent
         //     EndEpisode();
         // }
     }
-
-    // Send action with keyboard
-    // public override void Heuristic(float[] actionsOut)
-    // {
-    //     actionsOut[0] = Input.GetAxis("Horizontal");
-    //     actionsOut[1] = Input.GetAxis("Vertical");
-    // }
 }
