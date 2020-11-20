@@ -31,7 +31,7 @@ public class LaserScanner : MonoBehaviourRosNode
 
     public float PublisherDelay = 0.1f; // To prevent lookup into future tf2 errors
 
-    private int numLines;
+    public int numLines;
 
     private bool shouldScan;
 

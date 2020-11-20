@@ -44,7 +44,7 @@ class Unity(Node):
         super().__init__('wheel_navigation_unity')
         self.count = 0
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
-        self.timer = self.create_timer(0.1, self.timer_callback)
+        self.timer = self.create_timer(1, self.timer_callback)
 
     def __del__(self):
         try:

@@ -1574,6 +1574,7 @@ MonoBehaviour:
   Visualize: 1
   VisualizationColor: {r: 1, g: 0, b: 0, a: 0.1}
   PublisherDelay: 0.1
+  numLines: 0
 --- !u!1 &7268297909994020750
 GameObject:
   m_ObjectHideFlags: 0
@@ -2515,7 +2516,10 @@ MonoBehaviour:
   target: {fileID: 0}
   plane: {fileID: 0}
   baseFootprint: {fileID: 7268297910095336672}
+  baseLinkCollision: {fileID: 7268297911325035117}
+  baseScan: {fileID: 7268297909955418132}
   laserScanner: {fileID: 2619945327170263593}
+  collisionDistance: 0
 --- !u!114 &4899667534335699125
 MonoBehaviour:
   m_ObjectHideFlags: 0

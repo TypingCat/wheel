@@ -10,13 +10,20 @@ public class TurtlebotAgent : Agent
     public GameObject target;
     public GameObject plane;
     public Transform baseFootprint;
+    public Transform baseLinkCollision;
+    public Transform baseScan;
     public LaserScanner laserScanner;
+    public float collisionDistance;
 
     void Start()
     {
         Debug.Log("Start");
 
+        // Initialize parameters
         preRobotPose = GetPose(baseFootprint);
+        scanPose = new Vector2(
+            baseLinkCollision.localPosition.z - baseScan.localPosition.z,
+            -(baseLinkCollision.localPosition.x - baseScan.localPosition.x));
     }
 
     public override void OnEpisodeBegin()
@@ -43,7 +50,7 @@ public class TurtlebotAgent : Agent
     
     public override void CollectObservations(VectorSensor sensor)
     {
-        // Debug.Log("CollectObservations");
+        Debug.Log("CollectObservations");
         
         // Observe robot dynamics
         Vector3 robotPose = GetPose(baseFootprint);
@@ -56,7 +63,25 @@ public class TurtlebotAgent : Agent
         sensor.AddObservation(targetPose);
 
         // Observe scan ranges
-        sensor.AddObservation(laserScanner.Scan().Ranges);
+        float[] scan = laserScanner.Scan().Ranges;
+        sensor.AddObservation(scan);
+
+        // float[] s = new float[laserScanner.numLines];
+        Vector2[] sense = ChangeScanOrigin2Base(scan);
+        
+        
+        // Check episode end conditions
+        float closestObstacleDistance = Mathf.Min(scan);
+        float distanceToTarget = targetPose.x;
+
+
+        // if(episodeStep > maxEpisodeStep) EndEpisode();
+        // else if(distanceToTarget < 0.3f) EndEpisode();
+        // else if(countCollisionEnter > 0) {
+        //     countCollisionEnter = 0;
+        //     this.transform.localPosition = Vector3.zero;
+        //     EndEpisode();
+        // }
 
         // Log
         preRobotPose = robotPose;
@@ -94,28 +119,20 @@ public class TurtlebotAgent : Agent
         return new Vector2(distance, angle);
     }
 
-    // Move, rewarding, and check episode end
+    Vector2 scanPose;
+    private Vector2[] ChangeScanOrigin2Base(float[] scan)
+    {
+        Vector2[] sense = new Vector2[laserScanner.numLines];
+        for(int i = 0; i < laserScanner.numLines; i++) {
+            float angle = ((laserScanner.ApertureAngle / 2) - (i * laserScanner.AngularResolution)) * Mathf.Deg2Rad;
+            sense[i].x = scan[i] * Mathf.Cos(angle) - scanPose.x;
+            sense[i].y = scan[i] * Mathf.Sin(angle) - scanPose.y;
+        }
+        return sense;
+    }
+
     public override void OnActionReceived(float[] vectorAction)
     {
         // Debug.Log("OnActionReceived");
-        
-        // Rewarding
-        float reward = -0.05f;
-        // float distanceToTarget = Vector3.Distance(
-        //     this.transform.localPosition, target.transform.localPosition);
-        // if(distanceToTarget < 0.3f) reward += 15;
-        // if(countCollisionEnter > 0) reward -= 20;      
-        // if(Mathf.Abs(vectorAction[0]) > 0.5f) reward -= 0.15f * Mathf.Abs(vectorAction[0]);
-        // if(vectorAction[1] < -0.5f) reward += 0.15f * vectorAction[1];
-        AddReward(reward);
-
-        // Check episode end conditions
-        // if(episodeStep > maxEpisodeStep) EndEpisode();
-        // else if(distanceToTarget < 0.3f) EndEpisode();
-        // else if(countCollisionEnter > 0) {
-        //     countCollisionEnter = 0;
-        //     this.transform.localPosition = Vector3.zero;
-        //     EndEpisode();
-        // }
     }
 }
