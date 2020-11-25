@@ -148,7 +148,8 @@ public class LaserScanner : MonoBehaviourRosNode
             }
             else
             {
-                msg.Ranges[index] = float.PositiveInfinity;
+                // msg.Ranges[index] = float.PositiveInfinity;
+                msg.Ranges[index] = RangeMaximum;
             }
         }
 

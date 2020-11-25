@@ -2512,14 +2512,13 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 1000
+  MaxStep: 10000
   target: {fileID: 0}
   plane: {fileID: 0}
-  baseFootprint: {fileID: 7268297910095336672}
-  baseLinkCollision: {fileID: 7268297911325035117}
-  baseScan: {fileID: 7268297909955418132}
-  laserScanner: {fileID: 2619945327170263593}
-  collisionDistance: 0
+  baseFootprint: {fileID: 7268297910095336673}
+  baseScan: {fileID: 7268297909955418133}
+  baseLinkTransform: {fileID: 7268297911325035117}
+  collisionMargin: 2
 --- !u!114 &4899667534335699125
 MonoBehaviour:
   m_ObjectHideFlags: 0
