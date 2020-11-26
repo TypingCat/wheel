@@ -7,97 +7,156 @@ using Unity.MLAgents.Sensors;
 
 public class TurtlebotAgent : Agent
 {
-    void Start()
-    {
-        Debug.Log("Start");
-    }
-
     public GameObject target;
     public GameObject plane;
 
-    // private int episodeStep;
-    // public int maxEpisodeStep = 2000;
+    public GameObject baseFootprint;
+    public GameObject baseScan;
+    public Transform baseLinkTransform;
+    public float collisionMargin = 1;   // robotRadius is not enough to cover huge wheels
+
+    private LaserScanner laserScanner;    
+    private Rigidbody robotBody;
+
+    private float targetRadius;
+    private float robotRadius;
+
+    void Start()
+    {
+        // Connect components
+        laserScanner = baseScan.GetComponentInChildren<LaserScanner>();
+        robotBody = baseFootprint.GetComponentInChildren<Rigidbody>();
+
+        // Initialize parameters
+        preRobotPose = GetPose(robotBody);
+        scanPose = new Vector2(     // The transform base_scan in on the base_link 
+            baseLinkTransform.localPosition.z - baseScan.transform.localPosition.z,
+            -(baseLinkTransform.localPosition.x - baseScan.transform.localPosition.x));
+        targetRadius = (target.transform.localScale.x + target.transform.localScale.z) / 4;
+        robotRadius = (baseLinkTransform.localScale.x + baseLinkTransform.localScale.z) / 4;
+    }
+
     public override void OnEpisodeBegin()
     {
-        Debug.Log("OnEpisodeBegin");
+        Debug.Log("Start new episode");
+    }
 
-        // episodeStep = 0;
-
-        // float x = plane.transform.localScale.x;
-        // float y = plane.transform.localScale.y;
-        // float z = plane.transform.localScale.z;
-        // Debug.Log(x.ToString() + y.ToString() + z.ToString());
-
-        // // Respawn target
-        // target.transform.localPosition = new Vector3(
-        //     4*Random.value - 2,
-        //     0.1f,
-        //     4*Random.value - 2);
+    private void respawn(GameObject obj, float margin)
+    {
+        Vector3 respawnArea = new Vector3(
+            (plane.transform.localScale.x * 10) / 2 - margin,
+            0,
+            (plane.transform.localScale.z * 10) / 2 - margin
+        );
+        obj.transform.localPosition = new Vector3(
+            (respawnArea.x * 2 * Random.value) - respawnArea.x,
+            0,
+            (respawnArea.z * 2 * Random.value) - respawnArea.z
+        );
+    }
+    private void respawn(Rigidbody rb, float margin)
+    {
+        Vector3 respawnArea = new Vector3(
+            (plane.transform.localScale.x * 10) / 2 - margin,
+            0,
+            (plane.transform.localScale.z * 10) / 2 - margin
+        );
+        rb.position = new Vector3(
+            (respawnArea.x * 2 * Random.value) - respawnArea.x,
+            0,
+            (respawnArea.z * 2 * Random.value) - respawnArea.z
+        );
+        rb.rotation = Quaternion.Euler(0, 720 * Random.value - 360, 0);
     }
     
     public override void CollectObservations(VectorSensor sensor)
     {
-        Debug.Log("CollectObservations");
-        
-        float empty = 1.2f;
-        sensor.AddObservation(empty);
+        // Observe scan ranges
+        float[] scan = laserScanner.Scan().Ranges;
+        sensor.AddObservation(scan);
+
+        // Observe robot dynamics
+        Vector3 robotPose = GetPose(robotBody);
+        Vector2 robotVelocity = GetVelocity(robotPose);
+        sensor.AddObservation(robotPose);
+        sensor.AddObservation(robotVelocity);
 
         // Observe relative pose of target
-        // float distanceToTarget = Vector3.Distance(
-        //     this.transform.localPosition, target.transform.localPosition);
-        // float angleToTarget = Mathf.Rad2Deg * Mathf.Atan2(
-        //     target.transform.localPosition.x - this.transform.localPosition.x,
-        //     target.transform.localPosition.z - this.transform.localPosition.z)
-        //     - this.transform.localEulerAngles.y;
-        // angleToTarget = ((angleToTarget + 540) % 360 - 180) * Mathf.Deg2Rad;
-
-        // sensor.AddObservation(distanceToTarget);
-        // sensor.AddObservation(angleToTarget);
-        // sensor.AddObservation(Mathf.Sin(angleToTarget));
-        // sensor.AddObservation(Mathf.Cos(angleToTarget));
-    }
-
-    // Move, rewarding, and check episode end
-    // public float maxLinearVelocity = 0.88f;    // 0.22 [m/s]
-    // public float maxAngulerVelocity = 2.84f;   // 2.84 [rad/s]
-    public override void OnActionReceived(float[] vectorAction)
-    {
-        Debug.Log("OnActionReceived");
-
-        // episodeStep += 1;
-
-        // Move robot body
-        // Vector3 deltaPosition = this.transform.TransformDirection(
-        //     new Vector3(0, 0, maxLinearVelocity * vectorAction[1] * Time.deltaTime));
-        // Quaternion deltaRotation = Quaternion.Euler(
-        //     new Vector3(0, maxAngulerVelocity * vectorAction[0] * Time.deltaTime * 180 / Mathf.PI, 0));
-        // this.GetComponent<Rigidbody>().MovePosition(this.transform.position + deltaPosition);
-        // this.GetComponent<Rigidbody>().MoveRotation(this.transform.rotation * deltaRotation);
-        
-        // Rewarding
-        float reward = -0.05f;
-        // float distanceToTarget = Vector3.Distance(
-        //     this.transform.localPosition, target.transform.localPosition);
-        // if(distanceToTarget < 0.3f) reward += 15;
-        // if(countCollisionEnter > 0) reward -= 20;      
-        // if(Mathf.Abs(vectorAction[0]) > 0.5f) reward -= 0.15f * Mathf.Abs(vectorAction[0]);
-        // if(vectorAction[1] < -0.5f) reward += 0.15f * vectorAction[1];
-        AddReward(reward);
+        Vector2 targetPosition = GetRelativePos2D(robotPose, GetPose(target.transform));
+        sensor.AddObservation(targetPosition);
 
         // Check episode end conditions
-        // if(episodeStep > maxEpisodeStep) EndEpisode();
-        // else if(distanceToTarget < 0.3f) EndEpisode();
-        // else if(countCollisionEnter > 0) {
-        //     countCollisionEnter = 0;
-        //     this.transform.localPosition = Vector3.zero;
-        //     EndEpisode();
-        // }
+        float[] sense = ShiftScanOrigin(scan);
+        float distanceToObstacle = Mathf.Min(sense);
+        float distanceToTarget = targetPosition.x;
+        if(distanceToObstacle < robotRadius * collisionMargin) {
+            Debug.Log("Collides with an obstacle");
+            respawn(robotBody, 2);
+            EndEpisode();
+        }
+        else if(distanceToTarget < robotRadius + targetRadius) {
+            Debug.Log("Reaches the target");
+            respawn(target, 1);
+            EndEpisode();
+        }
+
+        // Backup
+        preRobotPose = robotPose;
     }
 
-    // Send action with keyboard
-    // public override void Heuristic(float[] actionsOut)
-    // {
-    //     actionsOut[0] = Input.GetAxis("Horizontal");
-    //     actionsOut[1] = Input.GetAxis("Vertical");
-    // }
+    // Get 2D pose in the right-handed coordinate system
+    private Vector3 GetPose(Transform tf)
+    {
+        return new Vector3(
+            tf.localPosition.x,
+            tf.localPosition.z,
+            -((tf.localEulerAngles.y + 450) % 360 - 180) * Mathf.Deg2Rad
+        );
+    }
+    private Vector3 GetPose(Rigidbody rb)
+    {
+        return new Vector3(
+            rb.position.x,
+            rb.position.z,
+            -((rb.rotation.eulerAngles.y + 450) % 360 - 180) * Mathf.Deg2Rad
+        );
+    }
+
+    // Get linear and angular velocity
+    private Vector3 preRobotPose;
+    private Vector2 GetVelocity(Vector3 pose)
+    {
+        return new Vector2(
+            Vector3.Distance(preRobotPose, pose) / (Time.deltaTime * 10),
+            (pose.z - preRobotPose.z) / (Time.deltaTime * 10)
+        );
+    }
+
+    // Get relative position from p0 to p1 in the cylindrical coordinate system
+    private Vector2 GetRelativePos2D(Vector3 p0, Vector3 p1)
+    {
+        float dx = p1.x - p0.x;
+        float dy = p1.y - p0.y;
+        float distance = Mathf.Sqrt(Mathf.Pow(dx, 2) + Mathf.Pow(dx, 2));
+        float angle = Mathf.Atan2(dy, dx) - p0.z;
+        angle = ((angle + (3 * Mathf.PI)) % (2 * Mathf.PI) - Mathf.PI);
+        return new Vector2(distance, angle);
+    }
+
+    // Change scan origin from base_scan to base_link
+    Vector2 scanPose;
+    private float[] ShiftScanOrigin(float[] scan)
+    {
+        float[] sense = new float[laserScanner.numLines];
+        for(int i = 0; i < laserScanner.numLines; i++) {
+            float angle = ((laserScanner.ApertureAngle / 2) - (i * laserScanner.AngularResolution)) * Mathf.Deg2Rad;
+            sense[i] = Mathf.Sqrt(Mathf.Pow(scan[i] * Mathf.Cos(angle) - scanPose.x, 2) + Mathf.Pow(scan[i] * Mathf.Sin(angle) - scanPose.y, 2));
+        }
+        return sense;
+    }
+
+    public override void OnActionReceived(float[] vectorAction)
+    {
+        // Debug.Log("OnActionReceived");
+    }
 }

@@ -1177,7 +1177,7 @@ Transform:
   m_GameObject: {fileID: 7268297909426704045}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.06600001, y: 0.009000001, z: 0.066}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 7268297910906320586}
   m_Father: {fileID: 7268297910341927679}
@@ -1206,8 +1206,8 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 0.08
+  m_Height: 0.02
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7268297909450809796
@@ -1510,7 +1510,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7268297909955418132}
   - component: {fileID: 7268297909955418130}
-  - component: {fileID: 7268297909955418131}
+  - component: {fileID: 2619945327170263593}
   m_Layer: 0
   m_Name: base_scan
   m_TagString: Untagged
@@ -1546,7 +1546,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf9f46b6cdbc5b34abc23ea0d4c019f9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &7268297909955418131
+--- !u!114 &2619945327170263593
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1555,18 +1555,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 7268297909955418133}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 961ba4ae36f154f4d924008052b8f63f, type: 3}
+  m_Script: {fileID: 11500000, guid: 4c1c5563a52d270f185dadc7f9665a7b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   NodeName: laser_scanner
   ScanTopic: scan
   ScanLink: {fileID: 7268297909955418132}
   ScanLinkName: 
-  RangeMinimum: 0.15
+  RangeMinimum: 0.05
   RangeMaximum: 25
-  ApertureAngle: 360
-  ScanningFrequency: 13
-  AngularResolution: 0.3375
+  ApertureAngle: 359.64
+  ScanningFrequency: 10
+  AngularResolution: 0.36
   UseTimeIncrement: 1
   LayerMask:
     serializedVersion: 2
@@ -1574,6 +1574,7 @@ MonoBehaviour:
   Visualize: 1
   VisualizationColor: {r: 1, g: 0, b: 0, a: 0.1}
   PublisherDelay: 0.1
+  numLines: 0
 --- !u!1 &7268297909994020750
 GameObject:
   m_ObjectHideFlags: 0
@@ -2172,7 +2173,7 @@ Transform:
   m_GameObject: {fileID: 7268297910398719725}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.06600001, y: 0.009000001, z: 0.066}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 7268297909539079448}
   m_Father: {fileID: 7268297909890440956}
@@ -2201,10 +2202,10 @@ CapsuleCollider:
   m_Material: {fileID: 0}
   m_IsTrigger: 0
   m_Enabled: 1
-  m_Radius: 0.5
-  m_Height: 7.3333335
+  m_Radius: 0.08
+  m_Height: 0.02
   m_Direction: 1
-  m_Center: {x: -1.6390485e-18, y: -0.000022351742, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &7268297910483338851
 GameObject:
   m_ObjectHideFlags: 0
@@ -2511,9 +2512,13 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 1000
+  MaxStep: 10000
   target: {fileID: 0}
   plane: {fileID: 0}
+  baseFootprint: {fileID: 7268297910095336673}
+  baseScan: {fileID: 7268297909955418133}
+  baseLinkTransform: {fileID: 7268297911325035117}
+  collisionMargin: 2
 --- !u!114 &4899667534335699125
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2527,13 +2532,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 1
+    VectorObservationSize: 1007
     NumStackedVectorObservations: 1
     VectorActionSize: 02000000
     VectorActionDescriptions: []
     VectorActionSpaceType: 1
   m_Model: {fileID: 0}
-  m_InferenceDevice: 0
+  m_InferenceDevice: 1
   m_BehaviorType: 0
   m_BehaviorName: Turtlebot
   TeamId: 0
