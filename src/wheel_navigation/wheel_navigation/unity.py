@@ -24,27 +24,26 @@ class Unity(Node):
             break
         spec = self.env.behavior_specs[self.behavior]
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-        num_agents = len(decision_steps) + len(terminal_steps)
+        agents = list(set(list(decision_steps.agent_id) + list(terminal_steps.agent_id)))
 
         print(f"Behavior name: {self.behavior}")
         print(f"Observation shapes: {spec.observation_shapes}")
         print(f"Action shapes: {spec.action_shape}")
-        print(f"Number of agents: {num_agents}")
+        print(f"Number of agents: {len(agents)}")
 
         # Initialize experience
         exp = {}
-        while(len(exp) < num_agents):
+        while(len(exp) < len(agents)):
+            print(".", end="")
             self.env.step()
             exp = self.get_experience(exp)
-            print(".", end="")
-        self.exp = exp
-        self.notice("start")
+        self.pre_exp = exp
 
         # Initialize ROS
         super().__init__('wheel_navigation_unity')
-        self.count = 0
+        self.notice("start")
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
-        self.timer = self.create_timer(1, self.timer_callback)
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
     def __del__(self):
         try:
@@ -61,14 +60,13 @@ class Unity(Node):
         # Set action
         act = [2, 1]
         # self.env.set_actions(self.behavior, act)
-        # print(exp)
+        
         # Publish experience
-        self.publish_sample(exp, act)
-        self.exp = exp
+        sample = self.wrap(exp, act)
+        self.sample_publisher.publish(sample)
 
-        # Print log
-        print(self.count)
-        self.count += 1
+        # Backup
+        self.pre_exp = exp
 
     def get_experience(self, exp={}):
         """Get observation, done, reward from unity environment"""
@@ -93,20 +91,20 @@ class Unity(Node):
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
         return exp
 
-    def publish_sample(self, exp, act):
+    def wrap(self, exp, act):
         # Generate a sample from experiences
         sample = {}
         for agent in exp:
-            if self.exp[agent]['done'] is True:
+            if self.pre_exp[agent]['done'] is True:
                 continue
-            sample[str(agent)] = copy.deepcopy(self.exp[agent])
+            sample[str(agent)] = copy.deepcopy(self.pre_exp[agent])
             sample[str(agent)]['action'] = act
             sample[str(agent)]['next_obs'] = exp[agent]['obs']
 
-        # Publish the sample as json
+        # Convert sample to json
         sample_json = String()
         sample_json.data = json.dumps(sample)
-        self.sample_publisher.publish(sample_json)
+        return sample_json
 
     def notice(self, string):
         """Print yellow string"""
