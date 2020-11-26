@@ -29,7 +29,7 @@ class Unity(Node):
         print(f"Behavior name: {self.behavior}")
         print(f"Observation shapes: {spec.observation_shapes}")
         print(f"Action shapes: {spec.action_shape}")
-        print(f"Number of agents: {len(agents)}")
+        print(f"Agents: {agents}")
 
         # Initialize experience
         exp = {}

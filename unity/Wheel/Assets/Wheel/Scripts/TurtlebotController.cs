@@ -5,11 +5,12 @@ using rclcs;
 
 
 [RequireComponent(typeof(Rigidbody))]
-public class TurtlebotController : MonoBehaviourRosNode
+public class TurtlebotController : CustomBehaviourRosNode
 {
     public string NodeName = "turtlebot_controller";
     public string CommandVelocityTopic = "cmd_vel";
 
+    public TurtlebotAgent agent;
     public Rigidbody BaseRigidbody;
 
     private Vector3 commandVelocityLinear = Vector3.zero;
@@ -19,6 +20,12 @@ public class TurtlebotController : MonoBehaviourRosNode
 
     private Subscription<geometry_msgs.msg.Twist> commandVelocitySubscription;
 
+    protected override void CreateRosNode()
+    {        
+        getSharedContext();
+        node = new Node(nodeName, context, "agent_" + agent.id);
+    }
+    
     protected override void StartRos()
     {
         commandVelocitySubscription =

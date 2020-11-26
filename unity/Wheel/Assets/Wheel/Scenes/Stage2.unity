@@ -121,7 +121,68 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1001 &101193831
+--- !u!1 &858479518
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 858479521}
+  - component: {fileID: 858479520}
+  - component: {fileID: 858479519}
+  m_Layer: 0
+  m_Name: ROS2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &858479519
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 858479518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 217116b5d955964649e0efc34f9f6fc7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NodeName: keyboard_teleop
+  CommandVelocityTopic: agent_0/cmd_vel
+  MaxLinearVelocity: 0.5
+  MaxAngularVelocity: 1
+  PublishingFrequency: 30
+--- !u!114 &858479520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 858479518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06103f43de8378d3f9b34f55a7a0eee2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &858479521
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 858479518}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1312350857
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -131,7 +192,7 @@ PrefabInstance:
     - target: {fileID: 305167615346312841, guid: acc11462087807354a6a7eabf9db4802,
         type: 3}
       propertyPath: m_Name
-      value: Stage [1, 0]
+      value: Stage 1
       objectReference: {fileID: 0}
     - target: {fileID: 305167615346312842, guid: acc11462087807354a6a7eabf9db4802,
         type: 3}
@@ -193,69 +254,13 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 5456598376254497797, guid: acc11462087807354a6a7eabf9db4802,
+        type: 3}
+      propertyPath: id
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: acc11462087807354a6a7eabf9db4802, type: 3}
---- !u!1 &858479518
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 858479521}
-  - component: {fileID: 858479520}
-  - component: {fileID: 858479519}
-  m_Layer: 0
-  m_Name: ROS2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &858479519
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 858479518}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 217116b5d955964649e0efc34f9f6fc7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NodeName: keyboard_teleop
-  CommandVelocityTopic: cmd_vel
-  MaxLinearVelocity: 0.5
-  MaxAngularVelocity: 1
-  PublishingFrequency: 30
---- !u!114 &858479520
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 858479518}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 06103f43de8378d3f9b34f55a7a0eee2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!4 &858479521
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 858479518}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1561781990
 GameObject:
   m_ObjectHideFlags: 0
@@ -425,7 +430,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2056479464}
   m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 10, z: 0}
+  m_LocalPosition: {x: 5, y: 10, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -441,7 +446,7 @@ PrefabInstance:
     - target: {fileID: 305167615346312841, guid: acc11462087807354a6a7eabf9db4802,
         type: 3}
       propertyPath: m_Name
-      value: Stage [0, 0]
+      value: Stage 0
       objectReference: {fileID: 0}
     - target: {fileID: 305167615346312842, guid: acc11462087807354a6a7eabf9db4802,
         type: 3}
@@ -502,6 +507,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5456598376254497797, guid: acc11462087807354a6a7eabf9db4802,
+        type: 3}
+      propertyPath: id
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: acc11462087807354a6a7eabf9db4802, type: 3}

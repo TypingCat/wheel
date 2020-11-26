@@ -1560,6 +1560,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NodeName: laser_scanner
   ScanTopic: scan
+  agent: {fileID: 2677192119873570657}
   ScanLink: {fileID: 7268297909955418132}
   ScanLinkName: 
   RangeMinimum: 0.05
@@ -1765,9 +1766,9 @@ GameObject:
   - component: {fileID: 7268297910095336672}
   - component: {fileID: 7268297910095336684}
   - component: {fileID: 7268297910095336685}
-  - component: {fileID: 7268297910095336687}
   - component: {fileID: 7268297910095336683}
   - component: {fileID: 8230222378892871012}
+  - component: {fileID: 8679243980067707904}
   m_Layer: 0
   m_Name: base_footprint
   m_TagString: Untagged
@@ -1818,25 +1819,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &7268297910095336687
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7268297910095336673}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f45d32a777ff5da408c106eea87ea651, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NodeName: odometry
-  OdometryTopic: odom
-  OdometryPublishingFrequency: 20
-  TfPublishingFrequency: 20
-  BaseRigidbody: {fileID: 0}
-  OdomReferanceFrame: {fileID: 0}
-  PublishTf: 1
 --- !u!114 &7268297910095336683
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1868,7 +1850,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NodeName: turtlebot_controller
   CommandVelocityTopic: cmd_vel
+  agent: {fileID: 2677192119873570657}
   BaseRigidbody: {fileID: 7268297910095336685}
+--- !u!114 &8679243980067707904
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7268297910095336673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06d1ec524f25d5bb9aa71231f8a689e7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NodeName: odometry
+  OdometryTopic: odom
+  OdometryPublishingFrequency: 20
+  TfPublishingFrequency: 20
+  agent: {fileID: 2677192119873570657}
+  BaseRigidbody: {fileID: 0}
+  OdomReferanceFrame: {fileID: 0}
+  PublishTf: 1
 --- !u!1 &7268297910130475817
 GameObject:
   m_ObjectHideFlags: 0
@@ -2513,12 +2516,13 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 10000
+  id: 
+  collisionMargin: 2
   target: {fileID: 0}
   plane: {fileID: 0}
   baseFootprint: {fileID: 7268297910095336673}
+  baseLink: {fileID: 7268297910210693054}
   baseScan: {fileID: 7268297909955418133}
-  baseLinkTransform: {fileID: 7268297911325035117}
-  collisionMargin: 2
 --- !u!114 &4899667534335699125
 MonoBehaviour:
   m_ObjectHideFlags: 0
