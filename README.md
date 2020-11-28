@@ -13,7 +13,6 @@ ros2 launch wheel play.launch.py
 ## Project Structure
 - src/wheel: Main ROS2 package
 - src/wheel_navigation: Navigation with deep reinforcement learning
-- src/wheel_perception: Perception with image processing
 - unity/Wheel: Unity project for simulation
 
 
