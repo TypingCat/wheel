@@ -18,7 +18,7 @@ ros2 launch wheel play.launch.py
 
 ## Setup
 - Ubuntu 18.04
-    - CUDA 10.1
+    - CUDA 10.2
 - Python 3.8.3
     - torch 1.6.1
 - ROS2 dashing
@@ -26,8 +26,8 @@ ros2 launch wheel play.launch.py
     - [rplidar_ros](https://github.com/allenh1/rplidar_ros.git) 2.0.0
     - [ros2_intel_realsense](https://github.com/intel/ros2_intel_realsense)
     - [cartographer_ros](https://google-cartographer-ros.readthedocs.io/en/latest/compilation.html#building-installation)
-- Unity 2019.4.1f1
-    - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) release_9
+- Unity 2019.4.15f1
+    - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) release_10
     - [VSCode](https://assetstore.unity.com/packages/tools/utilities/vscode-45320?locale=ko-KR)
 
 ``` bash
