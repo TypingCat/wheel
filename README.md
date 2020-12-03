@@ -20,7 +20,7 @@ ros2 launch wheel play.launch.py
 - Ubuntu 18.04
     - CUDA 10.2
 - Python 3.8.3
-    - torch 1.6.1
+    - torch 1.7.0
 - ROS2 dashing
     - [turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/ros2_setup/)
     - [rplidar_ros](https://github.com/allenh1/rplidar_ros.git) 2.0.0
@@ -29,6 +29,9 @@ ros2 launch wheel play.launch.py
 - Unity 2019.4.15f1
     - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) release_9_branch
     - [VSCode](https://assetstore.unity.com/packages/tools/utilities/vscode-45320?locale=ko-KR)
+- Visual Studio Code
+    - `Omnisharp: Use Global Mono` = always
+    - `Omnisharp: Path` = lateset
 
 ``` bash
 git clone https://github.com/finiel/wheel.git
