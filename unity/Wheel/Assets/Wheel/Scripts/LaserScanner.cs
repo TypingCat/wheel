@@ -1,19 +1,14 @@
-﻿/*
-© Dyno Robotics, 2019
-Author: Samuel Lindgren (samuel@dynorobotics.se)
-Licensed under the Apache License, Version 2.0
-*/
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using rclcs;
 
-public class LaserScanner : MonoBehaviourRosNode
+public class LaserScanner : CustomBehaviourRosNode
 {
     public string NodeName = "laser_scanner";
     public string ScanTopic = "scan";
 
+    public TurtlebotAgent agent;
     public Transform ScanLink;
     public string ScanLinkName;
 
@@ -40,6 +35,12 @@ public class LaserScanner : MonoBehaviourRosNode
     private Publisher<sensor_msgs.msg.LaserScan> scanPublisher;
     private sensor_msgs.msg.LaserScan lastSentScanMsg;
     private Queue<sensor_msgs.msg.LaserScan> scanMsgQueue;
+
+    protected override void CreateRosNode()
+    {        
+        getSharedContext();
+        node = new Node(nodeName, context, "agent_" + agent.id);
+    }
 
     protected override void StartRos()
     {

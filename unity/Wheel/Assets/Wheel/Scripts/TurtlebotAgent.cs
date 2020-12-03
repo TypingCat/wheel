@@ -7,33 +7,38 @@ using Unity.MLAgents.Sensors;
 
 public class TurtlebotAgent : Agent
 {
-    public GameObject target;
-    public GameObject plane;
-
-    public GameObject baseFootprint;
-    public GameObject baseScan;
-    public Transform baseLinkTransform;
+    public string id = "";
     public float collisionMargin = 1;   // robotRadius is not enough to cover huge wheels
 
-    private LaserScanner laserScanner;    
+    public GameObject target;
+    public GameObject plane;
+    public GameObject baseFootprint;
+    public GameObject baseLink;
+    public GameObject baseScan;
+
     private Rigidbody robotBody;
+    private Transform baseLinkCollisions;
+    private LaserScanner laserScanner;
 
     private float targetRadius;
     private float robotRadius;
 
     void Start()
     {
-        // Connect components
-        laserScanner = baseScan.GetComponentInChildren<LaserScanner>();
+        // Connect with components
         robotBody = baseFootprint.GetComponentInChildren<Rigidbody>();
+        baseLinkCollisions = baseLink.transform.Find("Collisions");
+
+        // Connect with scripts
+        laserScanner = baseScan.GetComponentInChildren<LaserScanner>();
 
         // Initialize parameters
         preRobotPose = GetPose(robotBody);
         scanPose = new Vector2(     // The transform base_scan in on the base_link 
-            baseLinkTransform.localPosition.z - baseScan.transform.localPosition.z,
-            -(baseLinkTransform.localPosition.x - baseScan.transform.localPosition.x));
+            baseLinkCollisions.transform.localPosition.z - baseScan.transform.localPosition.z,
+            -(baseLinkCollisions.transform.localPosition.x - baseScan.transform.localPosition.x));
         targetRadius = (target.transform.localScale.x + target.transform.localScale.z) / 4;
-        robotRadius = (baseLinkTransform.localScale.x + baseLinkTransform.localScale.z) / 4;
+        robotRadius = (baseLinkCollisions.transform.localScale.x + baseLinkCollisions.transform.localScale.z) / 4;
     }
 
     public override void OnEpisodeBegin()

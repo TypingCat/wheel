@@ -13,23 +13,25 @@ ros2 launch wheel play.launch.py
 ## Project Structure
 - src/wheel: Main ROS2 package
 - src/wheel_navigation: Navigation with deep reinforcement learning
-- src/wheel_perception: Perception with image processing
 - unity/Wheel: Unity project for simulation
 
 
 ## Setup
 - Ubuntu 18.04
-    - CUDA 10.1
+    - CUDA 10.2
 - Python 3.8.3
-    - torch 1.6.1
+    - torch 1.7.0
 - ROS2 dashing
     - [turtlebot3](https://emanual.robotis.com/docs/en/platform/turtlebot3/ros2_setup/)
     - [rplidar_ros](https://github.com/allenh1/rplidar_ros.git) 2.0.0
     - [ros2_intel_realsense](https://github.com/intel/ros2_intel_realsense)
     - [cartographer_ros](https://google-cartographer-ros.readthedocs.io/en/latest/compilation.html#building-installation)
-- Unity 2019.4.1f1
-    - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) release_9
+- Unity 2019.4.15f1
+    - [ml-agents](https://github.com/Unity-Technologies/ml-agents.git) release_9_branch
     - [VSCode](https://assetstore.unity.com/packages/tools/utilities/vscode-45320?locale=ko-KR)
+- Visual Studio Code
+    - `Omnisharp: Use Global Mono` = always
+    - `Omnisharp: Path` = lateset
 
 ``` bash
 git clone https://github.com/finiel/wheel.git
