@@ -2515,7 +2515,7 @@ MonoBehaviour:
   agentParameters:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
-  MaxStep: 0
+  MaxStep: 10000
   id: 
   collisionMargin: 2
   target: {fileID: 0}
