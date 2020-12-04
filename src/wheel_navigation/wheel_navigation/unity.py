@@ -5,9 +5,11 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from mlagents_envs.environment import UnityEnvironment
-
 import copy
 import json
+
+import torch
+from . import brain
 
 
 class Unity(Node):
@@ -39,6 +41,9 @@ class Unity(Node):
             exp = self.get_experience(exp)
         self.pre_exp = exp
 
+        # Initialize brain
+        self.brain = brain.Brain(spec.observation_shapes[0][0], 2)
+
         # Initialize ROS
         super().__init__('wheel_navigation_unity')
         self.notice("start")
@@ -57,12 +62,18 @@ class Unity(Node):
         self.env.step()
         exp = self.get_experience()
 
-        # Set action
-        act = [2, 1]
-        # self.env.set_actions(self.behavior, act)
+        # Convert observation list to tensor
+        obs = []
+        for agent in exp:
+            obs.append(exp[agent]['obs'])
         
+        # Decide action
+        with torch.no_grad():
+            act = self.brain(torch.tensor(obs))
+        self.env.set_actions(self.behavior, act.numpy())
+
         # Publish experience
-        sample = self.wrap(exp, act)
+        sample = self.wrap(exp, act.tolist())
         self.sample_publisher.publish(sample)
 
         # Backup
@@ -98,7 +109,7 @@ class Unity(Node):
             if self.pre_exp[agent]['done'] is True:
                 continue
             sample[str(agent)] = copy.deepcopy(self.pre_exp[agent])
-            sample[str(agent)]['action'] = act
+            sample[str(agent)]['action'] = act[agent]
             sample[str(agent)]['next_obs'] = exp[agent]['obs']
 
         # Convert sample to json

@@ -8,7 +8,9 @@ using Unity.MLAgents.Sensors;
 public class TurtlebotAgent : Agent
 {
     public string id = "";
-    public float collisionMargin = 1;   // robotRadius is not enough to cover huge wheels
+    public float collisionMargin = 2;   // robotRadius is not enough to cover huge wheels
+    public float maxLinearVelocity = 0.5f;
+    public float maxAngularVelocity = 1;
 
     public GameObject target;
     public GameObject plane;
@@ -19,6 +21,7 @@ public class TurtlebotAgent : Agent
     private Rigidbody robotBody;
     private Transform baseLinkCollisions;
     private LaserScanner laserScanner;
+    private Controller controller;
 
     private float targetRadius;
     private float robotRadius;
@@ -28,9 +31,8 @@ public class TurtlebotAgent : Agent
         // Connect with components
         robotBody = baseFootprint.GetComponentInChildren<Rigidbody>();
         baseLinkCollisions = baseLink.transform.Find("Collisions");
-
-        // Connect with scripts
         laserScanner = baseScan.GetComponentInChildren<LaserScanner>();
+        controller = baseFootprint.GetComponentInChildren<Controller>();
 
         // Initialize parameters
         preRobotPose = GetPose(robotBody);
@@ -83,8 +85,10 @@ public class TurtlebotAgent : Agent
         // Observe robot dynamics
         Vector3 robotPose = GetPose(robotBody);
         Vector2 robotVelocity = GetVelocity(robotPose);
-        sensor.AddObservation(robotPose);
-        sensor.AddObservation(robotVelocity);
+        sensor.AddObservation(new Vector2(
+            robotVelocity.x / maxLinearVelocity,    // Normalized velocity
+            robotVelocity.y / maxAngularVelocity
+        ));
 
         // Observe relative pose of target
         Vector2 targetPosition = GetRelativePos2D(robotPose, GetPose(target.transform));
@@ -160,8 +164,11 @@ public class TurtlebotAgent : Agent
         return sense;
     }
 
+    // Send command velocity
     public override void OnActionReceived(float[] vectorAction)
     {
-        // Debug.Log("OnActionReceived");
+        float linearVelocity = maxLinearVelocity * vectorAction[0];
+        float angularVelocity = maxAngularVelocity * vectorAction[1];
+        controller.SetVelocity(linearVelocity, angularVelocity);
     }
 }

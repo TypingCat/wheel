@@ -4,7 +4,7 @@ using UnityEngine;
 using rclcs;
 
 [RequireComponent(typeof(Rigidbody))]
-public class TurtlebotController : CustomBehaviourRosNode
+public class Controller : CustomBehaviourRosNode
 {
     public string NodeName = "turtlebot_controller";
     public string CommandVelocityTopic = "cmd_vel";
@@ -55,5 +55,11 @@ public class TurtlebotController : CustomBehaviourRosNode
 
         BaseRigidbody.MovePosition(BaseRigidbody.position + deltaPosition);
         BaseRigidbody.MoveRotation(BaseRigidbody.rotation * deltaRotation);
+    }
+
+    public void SetVelocity(float linearVelocity, float angularVelocity)
+    {
+        commandVelocityLinear = new Vector3(0, 0, linearVelocity);
+        commandVelocityAngular = new Vector3(0, angularVelocity, 0);
     }
 }

@@ -1766,9 +1766,9 @@ GameObject:
   - component: {fileID: 7268297910095336672}
   - component: {fileID: 7268297910095336684}
   - component: {fileID: 7268297910095336685}
-  - component: {fileID: 7268297910095336683}
   - component: {fileID: 8230222378892871012}
   - component: {fileID: 8679243980067707904}
+  - component: {fileID: 8661095074742407713}
   m_Layer: 0
   m_Name: base_footprint
   m_TagString: Untagged
@@ -1819,23 +1819,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &7268297910095336683
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7268297910095336673}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 952b695c5093bfb6cb8c9f3d975e7669, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  NodeName: turtlebot_wheel_spinner
-  CommandVelocityTopic: cmd_vel
-  LeftWheel: {fileID: 7268297910341927679}
-  RightWheel: {fileID: 7268297909890440956}
-  WheelRadius: 0.08
 --- !u!114 &8230222378892871012
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1872,6 +1855,24 @@ MonoBehaviour:
   BaseRigidbody: {fileID: 0}
   OdomReferanceFrame: {fileID: 0}
   PublishTf: 1
+--- !u!114 &8661095074742407713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7268297910095336673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a790d1f1c4c1952c9ea3433bc96bef0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NodeName: turtlebot_wheel_spinner
+  CommandVelocityTopic: cmd_vel
+  agent: {fileID: 2677192119873570657}
+  LeftWheel: {fileID: 7268297910341927679}
+  RightWheel: {fileID: 7268297909890440956}
+  WheelRadius: 0.08
 --- !u!1 &7268297910130475817
 GameObject:
   m_ObjectHideFlags: 0
@@ -2518,6 +2519,8 @@ MonoBehaviour:
   MaxStep: 10000
   id: 
   collisionMargin: 2
+  maxLinearVelocity: 0.5
+  maxAngularVelocity: 1
   target: {fileID: 0}
   plane: {fileID: 0}
   baseFootprint: {fileID: 7268297910095336673}
@@ -2536,7 +2539,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_BrainParameters:
-    VectorObservationSize: 1007
+    VectorObservationSize: 1004
     NumStackedVectorObservations: 1
     VectorActionSize: 02000000
     VectorActionDescriptions: []
