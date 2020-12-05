@@ -3,11 +3,17 @@ ROS2 package that develops wheeled mobile robot capabilities
 
 
 ## Simple Usage
-``` bash
-ros2 launch wheel wakeup.launch.py
-ros2 launch wheel getup.launch.py
-ros2 launch wheel play.launch.py
-```
+- Control a mobile robot
+    ``` bash
+    ros2 launch wheel wakeup.launch.py
+    ros2 launch wheel getup.launch.py
+    ros2 launch wheel play.launch.py
+    ```
+- Simulate mobile robots
+    ``` bash
+    ros2 run wheel_navigation simulation
+    ros2 run wheel_navigation regression
+    ```
 
 
 ## Project Structure

@@ -1834,7 +1834,7 @@ MonoBehaviour:
   NodeName: turtlebot_controller
   CommandVelocityTopic: cmd_vel
   agent: {fileID: 2677192119873570657}
-  BaseRigidbody: {fileID: 7268297910095336685}
+  baseRigidbody: {fileID: 0}
 --- !u!114 &8679243980067707904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2521,6 +2521,7 @@ MonoBehaviour:
   collisionMargin: 2
   maxLinearVelocity: 0.5
   maxAngularVelocity: 1
+  useBrain: 1
   target: {fileID: 0}
   plane: {fileID: 0}
   baseFootprint: {fileID: 7268297910095336673}

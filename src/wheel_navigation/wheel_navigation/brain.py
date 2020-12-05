@@ -5,6 +5,8 @@ import torch.nn.functional as F
 
 
 class Brain(torch.nn.Module):
+    """Pytorch neural network model"""
+    
     def __init__(self, num_input, num_output):
         super(Brain, self).__init__()
         self.fc1 = torch.nn.Linear(num_input, 256)

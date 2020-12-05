@@ -15,7 +15,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class Unity(Node):
+class Simulation(Node):
+    """Simulate agents in Unity, and publish samples to ROS"""
+
     def __init__(self):
         # Connect with Unity
         self.notice("Wait for Unity scene play")
@@ -72,10 +74,13 @@ class Unity(Node):
         for agent in exp:
             obs.append(exp[agent]['obs'])
         
-        # Decide action
+        # Set agent action
         with torch.no_grad():
             act = self.brain(torch.tensor(obs))
-        self.env.set_actions(self.behavior, act.numpy())
+        try:
+            self.env.set_actions(self.behavior, act.numpy())
+        except:     # Unity doesn't need actions at decision steps
+            return
 
         # Publish experience
         sample = self.wrap(exp, act.tolist())
@@ -87,6 +92,7 @@ class Unity(Node):
     def get_experience(self, exp={}):
         """Get observation, done, reward from unity environment"""
 
+        # Organize experiences into a dictionary
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
         if len(terminal_steps) > 0:
             for agent in terminal_steps:
@@ -96,9 +102,6 @@ class Unity(Node):
                     exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
                 exp[agent]['done'] = True
-
-                # self.calc_reward(exp[agent]['obs'])
-
                 exp[agent]['reward'] = float(terminal_steps[agent].reward)
         else:
             for agent in decision_steps:
@@ -108,23 +111,9 @@ class Unity(Node):
                     exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['done'] = False
-
-                # print(agent)
-                # self.calc_reward(exp[agent]['obs'])
-
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
-                
+
         return exp
-
-    def calc_reward(self, obs):
-
-        scan = obs[:1000]
-        vel = obs[1000:1002]
-        target = obs[1002:1004]
-
-        # print(['vel', vel])
-        # print(['target', target])        
-
 
     def wrap(self, exp, act):
         # Generate a sample from experiences
@@ -148,7 +137,7 @@ class Unity(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = Unity()
+    node = Simulation()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

@@ -122,11 +122,8 @@ public class TurtlebotAgent : Agent
         float deltaTime = Time.deltaTime;
         float distance = Mathf.Sqrt(Mathf.Pow(robotPose.x - preRobotPose.x, 2) + Mathf.Pow(robotPose.y - preRobotPose.y, 2));
         float relativeAngle = GetRelativePos2D(preRobotPose, robotPose)[1];
-        float sign = 1;
-        if(Mathf.Abs(relativeAngle) > (Mathf.PI/2)) {   // Suppose it doesn't rotate more than 90' in delta time.
-            sign = -1;
-        }
-
+        float sign = Mathf.Abs(relativeAngle) < (Mathf.PI/2) ? 1 : -1;  // Suppose the robot doesn't rotate more than 90' in delta time.
+        
         return new Vector2(
             sign * distance / (deltaTime*10),
             (robotPose.z - preRobotPose.z) / (deltaTime*10)
