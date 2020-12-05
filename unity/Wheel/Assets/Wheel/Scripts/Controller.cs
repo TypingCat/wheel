@@ -10,7 +10,7 @@ public class Controller : CustomBehaviourRosNode
     public string CommandVelocityTopic = "cmd_vel";
 
     public TurtlebotAgent agent;
-    public Rigidbody BaseRigidbody;
+    public Rigidbody baseRigidbody;
 
     private Vector3 commandVelocityLinear = Vector3.zero;
     private Vector3 commandVelocityAngular = Vector3.zero;
@@ -36,8 +36,8 @@ public class Controller : CustomBehaviourRosNode
 
     private void Start()
     {
-        if(BaseRigidbody == null) {
-            BaseRigidbody = GetComponent<Rigidbody>();
+        if(baseRigidbody == null) {
+            baseRigidbody = GetComponent<Rigidbody>();
         }
 
         commandVelocityLinear = Vector3.zero;
@@ -50,11 +50,11 @@ public class Controller : CustomBehaviourRosNode
         SpinSome();
 
         Vector3 deltaPosition = commandVelocityLinear * Time.fixedDeltaTime;
-        deltaPosition = BaseRigidbody.transform.TransformDirection(deltaPosition);
+        deltaPosition = baseRigidbody.transform.TransformDirection(deltaPosition);
         Quaternion deltaRotation = Quaternion.Euler(-commandVelocityAngular * Mathf.Rad2Deg * Time.fixedDeltaTime);
 
-        BaseRigidbody.MovePosition(BaseRigidbody.position + deltaPosition);
-        BaseRigidbody.MoveRotation(BaseRigidbody.rotation * deltaRotation);
+        baseRigidbody.MovePosition(baseRigidbody.position + deltaPosition);
+        baseRigidbody.MoveRotation(baseRigidbody.rotation * deltaRotation);
     }
 
     public void SetVelocity(float linearVelocity, float angularVelocity)

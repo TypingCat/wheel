@@ -11,6 +11,9 @@ import json
 import torch
 from . import brain
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 class Unity(Node):
     def __init__(self):
@@ -42,7 +45,9 @@ class Unity(Node):
         self.pre_exp = exp
 
         # Initialize brain
-        self.brain = brain.Brain(spec.observation_shapes[0][0], 2)
+        self.brain = brain.Brain(
+            spec.observation_shapes[0][0],      # Input size
+            spec.action_spec.continuous_size)   # Output size
 
         # Initialize ROS
         super().__init__('wheel_navigation_unity')
@@ -81,6 +86,7 @@ class Unity(Node):
 
     def get_experience(self, exp={}):
         """Get observation, done, reward from unity environment"""
+
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
         if len(terminal_steps) > 0:
             for agent in terminal_steps:
@@ -90,6 +96,9 @@ class Unity(Node):
                     exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
                 exp[agent]['done'] = True
+
+                # self.calc_reward(exp[agent]['obs'])
+
                 exp[agent]['reward'] = float(terminal_steps[agent].reward)
         else:
             for agent in decision_steps:
@@ -99,8 +108,23 @@ class Unity(Node):
                     exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['done'] = False
+
+                # print(agent)
+                # self.calc_reward(exp[agent]['obs'])
+
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
+                
         return exp
+
+    def calc_reward(self, obs):
+
+        scan = obs[:1000]
+        vel = obs[1000:1002]
+        target = obs[1002:1004]
+
+        # print(['vel', vel])
+        # print(['target', target])        
+
 
     def wrap(self, exp, act):
         # Generate a sample from experiences
