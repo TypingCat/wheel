@@ -55,6 +55,7 @@ class Simulation(Node):
         super().__init__('wheel_navigation_unity')
         self.notice("start")
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
+        self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
     def __del__(self):
@@ -83,11 +84,14 @@ class Simulation(Node):
             return
 
         # Publish experience
-        sample = self.wrap(exp, act.tolist())
+        sample = self.pack_sample(exp, act.tolist())
         self.sample_publisher.publish(sample)
 
         # Backup
         self.pre_exp = exp
+
+    def brain_update_callback(self, msg):
+        print("!")
 
     def get_experience(self, exp={}):
         """Get observation, done, reward from unity environment"""
@@ -115,7 +119,7 @@ class Simulation(Node):
 
         return exp
 
-    def wrap(self, exp, act):
+    def pack_sample(self, exp, act):
         # Generate a sample from experiences
         sample = {}
         for agent in exp:
