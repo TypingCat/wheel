@@ -5,12 +5,17 @@ from rclpy.node import Node
 from std_msgs.msg import String
 
 from mlagents_envs.environment import UnityEnvironment
-
 import copy
 import json
+import numpy as np
+import matplotlib.pyplot as plt
 
+import torch
+from . import brain
 
-class Unity(Node):
+class Simulation(Node):
+    """Simulate agents in Unity, and publish samples to ROS"""
+
     def __init__(self):
         # Connect with Unity
         self.notice("Wait for Unity scene play")
@@ -39,10 +44,14 @@ class Unity(Node):
             exp = self.get_experience(exp)
         self.pre_exp = exp
 
+        # Initialize brain
+        self.brain = brain.Brain()
+
         # Initialize ROS
-        super().__init__('wheel_navigation_unity')
+        super().__init__('wheel_navigation_simulation')
         self.notice("start")
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
+        self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
         self.timer = self.create_timer(0.1, self.timer_callback)
 
     def __del__(self):
@@ -57,19 +66,42 @@ class Unity(Node):
         self.env.step()
         exp = self.get_experience()
 
-        # Set action
-        act = [2, 1]
-        # self.env.set_actions(self.behavior, act)
-        
+        # Convert observation list to tensor
+        obs = []
+        for agent in exp:
+            obs.append(exp[agent]['obs'])
+
+        # Set agent action
+        with torch.no_grad():
+            act = self.brain(torch.tensor(obs))
+        try:
+            self.env.set_actions(self.behavior, act.numpy())
+        except:     # Unity doesn't need actions at decision steps
+            return
+
         # Publish experience
-        sample = self.wrap(exp, act)
+        sample = self.pack_sample(exp, act.tolist())
         self.sample_publisher.publish(sample)
 
         # Backup
         self.pre_exp = exp
 
+    def brain_update_callback(self, msg):
+        """Syncronize brain using json state"""
+
+        # Convert json to tensor
+        state_list = json.loads(msg.data)
+        state_tensor = {}
+        for key, value in state_list.items():
+            state_tensor[key] = torch.tensor(value)
+
+        # Update brain with msg
+        self.brain.load_state_dict(state_tensor)
+
     def get_experience(self, exp={}):
         """Get observation, done, reward from unity environment"""
+
+        # Organize experiences into a dictionary
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
         if len(terminal_steps) > 0:
             for agent in terminal_steps:
@@ -89,16 +121,17 @@ class Unity(Node):
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['done'] = False
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
+                
         return exp
 
-    def wrap(self, exp, act):
+    def pack_sample(self, exp, act):
         # Generate a sample from experiences
         sample = {}
         for agent in exp:
             if self.pre_exp[agent]['done'] is True:
                 continue
             sample[str(agent)] = copy.deepcopy(self.pre_exp[agent])
-            sample[str(agent)]['action'] = act
+            sample[str(agent)]['action'] = act[agent]
             sample[str(agent)]['next_obs'] = exp[agent]['obs']
 
         # Convert sample to json
@@ -110,10 +143,9 @@ class Unity(Node):
         """Print yellow string"""
         print('\033[93m' + string + '\033[0m')
 
-
 def main(args=None):
     rclpy.init(args=args)
-    node = Unity()
+    node = Simulation()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
