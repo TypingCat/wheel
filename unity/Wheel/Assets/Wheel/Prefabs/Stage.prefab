@@ -635,6 +635,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 305167615346312842}
     m_Modifications:
+    - target: {fileID: 2619945327170263593, guid: a4daab814fd0a7f1aa80c44a8639a966,
+        type: 3}
+      propertyPath: AngularResolution
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 2619945327170263593, guid: a4daab814fd0a7f1aa80c44a8639a966,
+        type: 3}
+      propertyPath: ApertureAngle
+      value: 350
+      objectReference: {fileID: 0}
     - target: {fileID: 2677192119873570657, guid: a4daab814fd0a7f1aa80c44a8639a966,
         type: 3}
       propertyPath: plane

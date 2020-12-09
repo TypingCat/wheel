@@ -7,13 +7,11 @@ from std_msgs.msg import String
 from mlagents_envs.environment import UnityEnvironment
 import copy
 import json
-
-import torch
-from . import brain
-
 import numpy as np
 import matplotlib.pyplot as plt
 
+import torch
+from . import brain
 
 class Simulation(Node):
     """Simulate agents in Unity, and publish samples to ROS"""
@@ -47,12 +45,10 @@ class Simulation(Node):
         self.pre_exp = exp
 
         # Initialize brain
-        self.brain = brain.Brain(
-            spec.observation_shapes[0][0],      # Input size
-            spec.action_spec.continuous_size)   # Output size
+        self.brain = brain.Brain()
 
         # Initialize ROS
-        super().__init__('wheel_navigation_unity')
+        super().__init__('wheel_navigation_simulation')
         self.notice("start")
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
         self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
@@ -74,7 +70,7 @@ class Simulation(Node):
         obs = []
         for agent in exp:
             obs.append(exp[agent]['obs'])
-        
+
         # Set agent action
         with torch.no_grad():
             act = self.brain(torch.tensor(obs))
@@ -91,7 +87,16 @@ class Simulation(Node):
         self.pre_exp = exp
 
     def brain_update_callback(self, msg):
-        print("!")
+        """Syncronize brain using json state"""
+
+        # Convert json to tensor
+        state_list = json.loads(msg.data)
+        state_tensor = {}
+        for key, value in state_list.items():
+            state_tensor[key] = torch.tensor(value)
+
+        # Update brain with msg
+        self.brain.load_state_dict(state_tensor)
 
     def get_experience(self, exp={}):
         """Get observation, done, reward from unity environment"""
@@ -116,7 +121,7 @@ class Simulation(Node):
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['done'] = False
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
-
+                
         return exp
 
     def pack_sample(self, exp, act):
@@ -137,7 +142,6 @@ class Simulation(Node):
     def notice(self, string):
         """Print yellow string"""
         print('\033[93m' + string + '\033[0m')
-
 
 def main(args=None):
     rclpy.init(args=args)

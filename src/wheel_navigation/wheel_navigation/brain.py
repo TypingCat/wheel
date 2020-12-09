@@ -3,15 +3,14 @@
 import torch
 import torch.nn.functional as F
 
-
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
     
-    def __init__(self, num_input, num_output):
+    def __init__(self, num_input=40, num_output=2):
         super(Brain, self).__init__()
-        self.fc1 = torch.nn.Linear(num_input, 256)
-        self.fc2 = torch.nn.Linear(256, 256)
-        self.fc3 = torch.nn.Linear(256, num_output)
+        self.fc1 = torch.nn.Linear(num_input, 40)
+        self.fc2 = torch.nn.Linear(40, 40)
+        self.fc3 = torch.nn.Linear(40, num_output)
 
     def forward(self, x):
         x = F.relu(self.fc1(x))
@@ -19,13 +18,12 @@ class Brain(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-
 if __name__ == '__main__':
-    brain = Brain(1004, 2)
+    brain = Brain()
     print("\nModel:")
     print(brain)
 
-    obs = torch.randn(3, 1004)
+    obs = torch.randn(3, 40)
     print("\nRandom input:")
     print(obs)
 

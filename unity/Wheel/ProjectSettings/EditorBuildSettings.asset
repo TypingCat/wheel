@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Wheel/Scenes/TestPrefab1.unity
+    path: Assets/Wheel/Scenes/SingleStage.unity
     guid: d42e67857b7b2184391a13382c18df7f
   m_configObjects: {}

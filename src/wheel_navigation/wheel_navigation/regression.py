@@ -4,8 +4,6 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-# from mlagents_envs.environment import UnityEnvironment
-# import copy
 import json
 import math
 import numpy as np
@@ -13,21 +11,20 @@ import numpy as np
 import torch
 from . import brain
 
-
 class Regression(Node):
     """Learning action using a supervisor"""
 
     def __init__(self):
         # Initialize brain
-        self.brain = brain.Brain(1004, 2)
+        self.brain = brain.Brain()
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
 
         # Initialize ROS
-        super().__init__('wheel_navigation_unity')
+        super().__init__('wheel_navigation_regression')
         self.sample_subscription = self.create_subscription(String, '/sample', self.sample_callback, 1)
         self.brain_update_publisher = self.create_publisher(String, '/brain/update', 10)
-        self.timer = self.create_timer(1, self.timer_callback)
+        self.timer = self.create_timer(2, self.timer_callback)
 
     def sample_callback(self, msg):
         # Convert json into tensor
@@ -36,7 +33,8 @@ class Regression(Node):
         ctrl = []
         for agent in sample:
             obs.append(sample[agent]['obs'])
-            target = sample[agent]['obs'][1002:1004]
+            # velocitiy = sample[agent]['obs'][36:38]
+            target = sample[agent]['obs'][38:40]
             ctrl.append(self.supervisor(target))
         obs = torch.tensor(obs).float()
         ctrl = torch.tensor(ctrl).float()
@@ -48,8 +46,11 @@ class Regression(Node):
         loss.backward()
         self.optimizer.step()
 
+        # Log
+        print(loss)
+
     def timer_callback(self):
-        # Convert brain state to list
+        # Extract brain state as list dictionary
         state_tensor = self.brain.state_dict()
         state_list = {}
         for key, value in state_tensor.items():
@@ -67,7 +68,6 @@ class Regression(Node):
         linear_weight = math.cos(min(abs(target[1]), 0.5*math.pi))
         linear_ctrl = linear_weight * np.sign(target[0]) * min(abs(target[0]), max_linear_velocity)
         return [linear_ctrl, angular_ctrl]
-
 
 def main(args=None):
     rclpy.init(args=args)
