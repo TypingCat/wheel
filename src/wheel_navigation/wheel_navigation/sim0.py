@@ -7,11 +7,9 @@ from std_msgs.msg import String
 from mlagents_envs.environment import UnityEnvironment
 import copy
 import json
-import numpy as np
-import matplotlib.pyplot as plt
 
 import torch
-from . import brain
+from . import brain0
 
 class Simulation(Node):
     """Simulate agents in Unity, and publish samples to ROS"""
@@ -45,7 +43,7 @@ class Simulation(Node):
         self.pre_exp = exp
 
         # Initialize brain
-        self.brain = brain.Brain()
+        self.brain = brain0.Brain()
 
         # Initialize ROS
         super().__init__('wheel_navigation_simulation')

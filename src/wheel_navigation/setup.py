@@ -20,8 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'simulation = wheel_navigation.simulation:main',
-            'regression = wheel_navigation.regression:main',
+            'sim0 = wheel_navigation.sim0:main',
+            'learn0 = wheel_navigation.learn0:main',
         ],
     },
 )

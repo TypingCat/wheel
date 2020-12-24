@@ -9,19 +9,19 @@ import math
 import numpy as np
 import torch
 
-from wheel_navigation.brain import Brain
+from . import brain0
 
 class Regression(Node):
     """Learning action using a supervisor"""
 
     def __init__(self):
         # Initialize brain
-        self.brain = Brain()
+        self.brain = brain0.Brain()
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
 
         # Initialize ROS
-        super().__init__('wheel_navigation_regression')
+        super().__init__('wheel_navigation_learning')
         self.sample_subscription = self.create_subscription(String, '/sample', self.sample_callback, 1)
         self.brain_update_publisher = self.create_publisher(String, '/brain/update', 10)
         self.timer = self.create_timer(2, self.timer_callback)
