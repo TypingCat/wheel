@@ -47,7 +47,7 @@ class Regression(Node):
         self.optimizer.step()
 
         # Log
-        print(loss)
+        self.get_logger().warning(f"Loss {float(loss):.4f}")
 
     def timer_callback(self):
         # Extract brain state as list dictionary

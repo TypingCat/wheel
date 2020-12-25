@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import rclpy
+from rclpy.impl import rcutils_logger
+from rclpy.logging import LoggingSeverity
 from rclpy.node import Node
 from std_msgs.msg import String
 
@@ -15,9 +17,9 @@ class Brain(torch.nn.Module):
     
     def __init__(self, num_input=40, num_output=2):
         super(Brain, self).__init__()
-        self.fc1 = torch.nn.Linear(num_input, 20)
-        self.fc2 = torch.nn.Linear(20, 20)
-        self.fc3 = torch.nn.Linear(20, num_output)
+        self.fc1 = torch.nn.Linear(num_input, 40)
+        self.fc2 = torch.nn.Linear(40, 40)
+        self.fc3 = torch.nn.Linear(40, num_output)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -29,11 +31,14 @@ class Simulation(Node):
     """Simulate agents in Unity, and publish samples to ROS"""
 
     def __init__(self):
+        super().__init__('wheel_navigation_simulation')
+        self.get_logger().set_level(LoggingSeverity.INFO)
+
         # Connect with Unity
-        self.notice("Wait for Unity scene play")
+        self.get_logger().warning("Wait for Unity scene play")
         self.env = UnityEnvironment(file_name=None, seed=1)
         self.env.reset()
-        self.notice("Unity environment connected")
+        self.get_logger().info("Unity environment connected")
 
         # Get behavior specification
         for behavior_name in self.env.behavior_specs:
@@ -58,10 +63,10 @@ class Simulation(Node):
 
         # Initialize brain
         self.brain = Brain()
+        print(self.brain)
 
         # Initialize ROS
-        super().__init__('wheel_navigation_simulation')
-        self.notice("start")
+        self.get_logger().info("Start simulation")
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
         self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
         self.timer = self.create_timer(0.1, self.timer_callback)
@@ -71,7 +76,7 @@ class Simulation(Node):
             self.env.close()
         except:
             pass
-        self.notice("Unity environment disconnected")
+        self.get_logger().info("Unity environment disconnected")
 
     def timer_callback(self):
         # Simulate environment one-step forward
@@ -150,10 +155,6 @@ class Simulation(Node):
         sample_json = String()
         sample_json.data = json.dumps(sample)
         return sample_json
-
-    def notice(self, string):
-        """Print yellow string"""
-        print('\033[93m' + string + '\033[0m')
 
 def main(args=None):
     rclpy.init(args=args)
