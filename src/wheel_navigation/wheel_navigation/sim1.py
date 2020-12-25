@@ -20,8 +20,8 @@ class Brain(torch.nn.Module):
         self.fc3 = torch.nn.Linear(20, num_output)
 
     def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
+        x = torch.tanh(self.fc1(x))
+        x = torch.tanh(self.fc2(x))
         x = self.fc3(x)
         return x
 

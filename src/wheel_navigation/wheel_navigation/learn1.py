@@ -9,7 +9,7 @@ import math
 import numpy as np
 import torch
 
-from wheel_navigation.sim0 import Brain
+from wheel_navigation.sim1 import Brain
 
 class Regression(Node):
     """Learning action using a supervisor"""
