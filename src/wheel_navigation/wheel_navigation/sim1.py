@@ -5,16 +5,17 @@ from rclpy.logging import LoggingSeverity
 from rclpy.node import Node
 from std_msgs.msg import String
 
-from mlagents_envs.environment import UnityEnvironment
 import copy
 import json
+import math
 
+from mlagents_envs.environment import UnityEnvironment
 import torch
 
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
     
-    def __init__(self, num_input=40, num_output=2):
+    def __init__(self, num_input=40, num_output=9):
         super(Brain, self).__init__()
         self.fc1 = torch.nn.Linear(num_input, 40)
         self.fc2 = torch.nn.Linear(40, 40)
@@ -87,13 +88,24 @@ class Simulation(Node):
         for agent in exp:
             obs.append(exp[agent]['obs'])
 
-        # Set agent action
+        # Get policy
         with torch.no_grad():
-            act = self.brain(torch.tensor(obs))
+            logits = self.brain(torch.tensor(obs))
+
+        # Get action
+        act = torch.empty(0, 2)
+        act_set = torch.tensor([[[ 1., 1.]], [[ 1., 0.]], [[ 1., -1.]],
+                                [[ 0., 1.]], [[ 0., 0.]], [[ 0., -1.]],
+                                [[-1., 1.]], [[-1., 0.]], [[-1., -1.]]])
+        for logit in logits:
+            idx = torch.distributions.categorical.Categorical(logits=logit).sample().item()
+            act = torch.cat([act, act_set[idx]], dim=0)
+
+        # Set action
         try:
             self.env.set_actions(self.behavior, act.numpy())
         except:     # Unity doesn't need actions at decision steps
-            return
+            pass
 
         # Publish experience
         sample = self.pack_sample(exp, act.tolist())

@@ -88,13 +88,15 @@ class Simulation(Node):
         for agent in exp:
             obs.append(exp[agent]['obs'])
 
-        # Set agent action
+        # Get action
         with torch.no_grad():
             act = self.brain(torch.tensor(obs))
+
+        # Set action
         try:
             self.env.set_actions(self.behavior, act.numpy())
         except:     # Unity doesn't need actions at decision steps
-            return
+            pass
 
         # Publish experience
         sample = self.pack_sample(exp, act.tolist())
