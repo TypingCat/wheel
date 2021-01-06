@@ -11,8 +11,7 @@ ROS2 package that develops wheeled mobile robot capabilities
     ```
 - Simulate mobile robots
     ``` bash
-    ros2 run wheel_navigation simulation
-    ros2 run wheel_navigation regression
+    ros2 launch wheel learn_regression.launch.py
     ```
 
 

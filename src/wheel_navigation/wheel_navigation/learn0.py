@@ -7,21 +7,21 @@ from std_msgs.msg import String
 import json
 import math
 import numpy as np
-
 import torch
-from . import brain
+
+from wheel_navigation.sim0 import Brain
 
 class Regression(Node):
     """Learning action using a supervisor"""
 
     def __init__(self):
         # Initialize brain
-        self.brain = brain.Brain()
+        self.brain = Brain(num_input=40, num_output=2)
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
 
         # Initialize ROS
-        super().__init__('wheel_navigation_regression')
+        super().__init__('wheel_navigation_learning')
         self.sample_subscription = self.create_subscription(String, '/sample', self.sample_callback, 1)
         self.brain_update_publisher = self.create_publisher(String, '/brain/update', 10)
         self.timer = self.create_timer(2, self.timer_callback)
@@ -47,7 +47,7 @@ class Regression(Node):
         self.optimizer.step()
 
         # Log
-        print(loss)
+        self.get_logger().warning(f"Loss {float(loss):.4f}")
 
     def timer_callback(self):
         # Extract brain state as list dictionary
@@ -61,12 +61,12 @@ class Regression(Node):
         state.data = json.dumps(state_list)
         self.brain_update_publisher.publish(state)
     
-    def supervisor(self, target, max_linear_velocity=0.5, max_angular_velocity=1.0):
+    def supervisor(self, target):
         """Simple P-control that prioritizes angular velocity"""
 
-        angular_ctrl = np.sign(target[1]) * min(abs(target[1]), max_angular_velocity)
+        angular_ctrl = np.sign(target[1]) * min(abs(target[1]), 1)
         linear_weight = math.cos(min(abs(target[1]), 0.5*math.pi))
-        linear_ctrl = linear_weight * np.sign(target[0]) * min(abs(target[0]), max_linear_velocity)
+        linear_ctrl = linear_weight * np.sign(target[0]) * min(abs(target[0]), 1)
         return [linear_ctrl, angular_ctrl]
 
 def main(args=None):
