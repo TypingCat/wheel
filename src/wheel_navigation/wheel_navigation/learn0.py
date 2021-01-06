@@ -16,7 +16,7 @@ class Regression(Node):
 
     def __init__(self):
         # Initialize brain
-        self.brain = Brain()
+        self.brain = Brain(num_input=40, num_output=2)
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
 

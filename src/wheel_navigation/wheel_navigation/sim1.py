@@ -15,11 +15,11 @@ import torch
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
     
-    def __init__(self, num_input=40, num_output=9):
+    def __init__(self, num_input, num_output, num_hidden=40):
         super(Brain, self).__init__()
-        self.fc1 = torch.nn.Linear(num_input, 40)
-        self.fc2 = torch.nn.Linear(40, 40)
-        self.fc3 = torch.nn.Linear(40, num_output)
+        self.fc1 = torch.nn.Linear(num_input, num_hidden)
+        self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
+        self.fc3 = torch.nn.Linear(num_hidden, num_output)
 
     def forward(self, x):
         x = torch.tanh(self.fc1(x))
@@ -62,14 +62,14 @@ class Simulation(Node):
         self.pre_exp = exp
 
         # Initialize brain
-        self.brain = Brain()
+        self.brain = Brain(40, 9)
         print(self.brain)
 
         # Initialize ROS
         self.get_logger().info("Start")
         self.sample_publisher = self.create_publisher(String, '/sample', 10)
         self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
-        self.timer = self.create_timer(0.1, self.timer_callback)
+        self.timer = self.create_timer(0.2, self.timer_callback)
 
     def __del__(self):
         try:
@@ -82,11 +82,7 @@ class Simulation(Node):
         # Simulate environment one-step forward
         self.env.step()
         exp = self.get_experience()
-
-        # Convert observation list to tensor
-        obs = []
-        for agent in exp:
-            obs.append(exp[agent]['obs'])
+        obs = list(map(lambda agent: exp[agent]['obs'], exp))
 
         # Get policy
         with torch.no_grad():
@@ -102,17 +98,14 @@ class Simulation(Node):
             act = torch.cat([act, act_set[idx]], dim=0)
 
         # Set action
-        try:
-            self.env.set_actions(self.behavior, act.numpy())
-        except:     # Unity doesn't need actions at decision steps
-            pass
-
+        self.env.set_actions(self.behavior, act.numpy())
+        
         # Publish experience
         sample = self.pack_sample(exp, act.tolist())
         self.sample_publisher.publish(sample)
 
-        # Backup
-        self.pre_exp = exp
+        # Backup experience
+        self.pre_exp = copy.deepcopy(exp)
 
     def brain_update_callback(self, msg):
         """Syncronize brain using json state"""
@@ -138,8 +131,8 @@ class Simulation(Node):
                 except:
                     exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
-                exp[agent]['done'] = True
                 exp[agent]['reward'] = float(terminal_steps[agent].reward)
+                exp[agent]['done'] = True
         else:
             for agent in decision_steps:
                 try:
@@ -147,8 +140,8 @@ class Simulation(Node):
                 except:
                     exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
-                exp[agent]['done'] = False
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
+                exp[agent]['done'] = False
                 
         return exp
 
@@ -158,8 +151,11 @@ class Simulation(Node):
         for agent in exp:
             if self.pre_exp[agent]['done'] is True:
                 continue
-            sample[str(agent)] = copy.deepcopy(self.pre_exp[agent])
-            sample[str(agent)]['action'] = act[agent]
+            sample[str(agent)] = {}
+            sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
+            sample[str(agent)]['act'] = act[agent]
+            sample[str(agent)]['reward'] = exp[agent]['reward']
+            sample[str(agent)]['done'] = exp[agent]['done']
             sample[str(agent)]['next_obs'] = exp[agent]['obs']
 
         # Convert sample to json
