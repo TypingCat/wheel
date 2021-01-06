@@ -29,7 +29,7 @@ class Brain(torch.nn.Module):
 
     def get_actions(self, obs):
         with torch.no_grad():
-            logits = self.forward(torch.tensor(obs))
+            logits = self.forward(obs)
 
         act = torch.empty(0, 2)
         for logit in logits:

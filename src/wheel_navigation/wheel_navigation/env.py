@@ -38,10 +38,10 @@ class Environment(Node):
 
         # Initialize experience
         exp = {}
-        while(len(exp) < len(agents)):
+        while(len(exp) == 0):
             print(".", end="")
             self.env.step()
-            exp = self.get_experience(exp)
+            exp = self.get_experience()
         self.pre_exp = exp
 
         # Initialize ROS
@@ -60,9 +60,6 @@ class Environment(Node):
     def timer_callback(self):
         # Simulate environment one-step forward
         self.env.step()
-
-        # decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-
         exp = self.get_experience()
         obs = list(map(lambda agent: exp[agent]['obs'], exp))
 
@@ -70,22 +67,12 @@ class Environment(Node):
         with torch.no_grad():
             act = self.brain.get_actions(torch.tensor(obs))
 
-        # print([decision_steps.agent_id.size, terminal_steps.agent_id.size])
-
         # Set action
         self.env.set_actions(self.behavior, act.numpy())
 
         # Publish experience
         sample = self.pack_sample(exp, act.tolist())
         self.sample_publisher.publish(sample)
-
-        # print("----")
-        # for agent in exp:
-        #     print(self.pre_exp[agent]['obs'][0:2])
-        #     print(exp[agent]['obs'][0:2])
-        #     break
-
-        # Backup experience
         self.pre_exp = copy.deepcopy(exp)
 
     def brain_update_callback(self, msg):
@@ -100,29 +87,29 @@ class Environment(Node):
         # Update brain with msg
         self.brain.load_state_dict(state_tensor)
 
-    def get_experience(self, exp={}):
+    def get_experience(self):
         """Get observation, done, reward from unity environment"""
 
         # Organize experiences into a dictionary
+        exp = {}
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-        if len(terminal_steps) > 0:
-            for agent in terminal_steps:
-                try:
-                    exp[agent]
-                except:
-                    exp[agent] = {}
+        for agent in terminal_steps:
+            try:
+                exp[agent]
+            except:
+                exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
                 exp[agent]['reward'] = float(terminal_steps[agent].reward)
                 exp[agent]['done'] = True
-        else:
-            for agent in decision_steps:
-                try:
-                    exp[agent]
-                except:
-                    exp[agent] = {}
+        for agent in decision_steps:
+            try:
+                exp[agent]
+            except:
+                exp[agent] = {}
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
                 exp[agent]['done'] = False
+                
         return exp
 
     def pack_sample(self, exp, act):
