@@ -68,7 +68,10 @@ class Environment(Node):
             act = self.brain.get_actions(torch.tensor(obs))
 
         # Set action
-        self.env.set_actions(self.behavior, act.numpy())
+        try:
+            self.env.set_actions(self.behavior, act.numpy())
+        except:
+            return
 
         # Publish experience
         sample = self.pack_sample(exp, act.tolist())
@@ -109,7 +112,7 @@ class Environment(Node):
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
                 exp[agent]['done'] = False
-                
+
         return exp
 
     def pack_sample(self, exp, act):
@@ -129,3 +132,18 @@ class Environment(Node):
         sample_json = String()
         sample_json.data = json.dumps(sample)
         return sample_json
+
+class Batch:
+    def __init__(self, size):
+        self.size = size
+        self.reset()
+        
+    def reset(self):
+        self.data = []
+
+    def check_free_space(self):
+        return self.size - len(self.data)
+
+    def extend(self, samples):
+        if self.check_free_space() > 0:     # Allows oversize
+            self.data += samples

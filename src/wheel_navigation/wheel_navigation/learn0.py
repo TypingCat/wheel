@@ -8,8 +8,12 @@ import json
 import math
 import numpy as np
 import torch
+import copy
+import threading
+import time
 
 from wheel_navigation.sim0 import Brain
+from wheel_navigation.env import Batch
 
 class Regression(Node):
     """Learning action using a supervisor"""
@@ -17,39 +21,56 @@ class Regression(Node):
     def __init__(self):
         # Initialize brain
         self.brain = Brain(num_input=40, num_output=2)
+        self.batch = Batch(size=1)
+        self.threads = []
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
+        self.time = time.time()
 
         # Initialize ROS
         super().__init__('wheel_navigation_learning')
         self.sample_subscription = self.create_subscription(String, '/sample', self.sample_callback, 1)
         self.brain_update_publisher = self.create_publisher(String, '/brain/update', 10)
-        self.timer = self.create_timer(2, self.timer_callback)
 
     def sample_callback(self, msg):
-        # Convert json into tensor
-        sample = json.loads(msg.data)
-        obs = []
-        ctrl = []
-        for agent in sample:
-            obs.append(sample[agent]['obs'])
-            # velocitiy = sample[agent]['obs'][36:38]
-            target = sample[agent]['obs'][38:40]
-            ctrl.append(self.supervisor(target))
+        # Accumulate samples into batch
+        samples = json.loads(msg.data)
+        self.batch.extend(
+            [samples[agent] for agent in samples])
+        print(self.batch.check_free_space())
+
+        # Insert batch into learning thread
+        self.threads = [t for t in self.threads if t.isAlive()]
+        if self.batch.check_free_space() <= 0:
+            t = threading.Thread(
+                target=self.learning,
+                args=[copy.deepcopy(self.batch)],
+                daemon=True)
+            self.threads.append(t)
+            self.batch.reset()
+            t.start()
+
+    def learning(self, batch):
+        obs = [samples['obs'] for samples in batch.data]
+        target = [o[38:40] for o in obs]
+
+        # Calculate answers of supervisor
+        act_answer = [self.supervisor(t) for t in target]
         obs = torch.tensor(obs).float()
-        ctrl = torch.tensor(ctrl).float()
+        act_answer = torch.tensor(act_answer).float()
 
         # Train the brain
         act = self.brain(obs)
-        loss = self.criterion(act, ctrl)
+        loss = self.criterion(act, act_answer)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
         # Log
-        self.get_logger().warning(f"Loss {float(loss):.4f}")
+        self.publish_brain_state()
+        self.get_logger().warning(f"Time {time.time()-self.time:.1f}s, Loss {float(loss):.4f}")
 
-    def timer_callback(self):
+    def publish_brain_state(self):
         # Extract brain state as list dictionary
         state_tensor = self.brain.state_dict()
         state_list = {}

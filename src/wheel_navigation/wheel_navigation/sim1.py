@@ -28,10 +28,8 @@ class Brain(torch.nn.Module):
         return x
 
     def get_actions(self, obs):
-        with torch.no_grad():
-            logits = self.forward(obs)
-
         act = torch.empty(0, 2)
+        logits = self.forward(obs)
         for logit in logits:
             idx = torch.distributions.categorical.Categorical(logits=logit).sample().item()
             act = torch.cat([act, Brain.ACTION[idx]], dim=0)
