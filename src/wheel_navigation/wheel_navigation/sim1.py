@@ -9,9 +9,9 @@ from wheel_navigation.env import Environment
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
 
-    ACTION = torch.tensor([[[ 1., 1.]], [[ 1., 0.]], [[ 1., -1.]],
-                           [[ 0., 1.]], [[ 0., 0.]], [[ 0., -1.]],
-                           [[-1., 1.]], [[-1., 0.]], [[-1., -1.]]])
+    ACTION = [[ 1., 1.], [ 1., 0.], [ 1., -1.],
+              [ 0., 1.], [ 0., 0.], [ 0., -1.],
+              [-1., 1.], [-1., 0.], [-1., -1.]]
     
     def __init__(self, num_input, num_output, num_hidden=40):
         self.num_output = num_output
@@ -27,13 +27,15 @@ class Brain(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-    def get_actions(self, obs):
-        act = torch.empty(0, 2)
+    def get_action(self, obs):
+        policy = self.get_policy(obs)
+        act_idx = [p.sample().item() for p in policy]
+        act = [Brain.ACTION[idx] for idx in act_idx]
+        return torch.tensor(act)
+    
+    def get_policy(self, obs):
         logits = self.forward(obs)
-        for logit in logits:
-            idx = torch.distributions.categorical.Categorical(logits=logit).sample().item()
-            act = torch.cat([act, Brain.ACTION[idx]], dim=0)
-        return act
+        return [torch.distributions.categorical.Categorical(logits=logit) for logit in logits]
 
 def main(args=None):
     rclpy.init(args=args)

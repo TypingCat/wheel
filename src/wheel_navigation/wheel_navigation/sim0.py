@@ -21,7 +21,7 @@ class Brain(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-    def get_actions(self, obs):
+    def get_action(self, obs):
         return self.forward(obs)
 
 def main(args=None):

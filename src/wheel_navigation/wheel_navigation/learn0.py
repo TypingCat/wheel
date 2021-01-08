@@ -22,13 +22,12 @@ class Regression(Node):
         # Initialize brain
         self.brain = Brain(num_input=40, num_output=2)
         self.batch = Batch(size=1)
-        self.threads = []
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
-        self.time = time.time()
 
         # Initialize ROS
         super().__init__('wheel_navigation_learning')
+        self.time = time.time()
         self.sample_subscription = self.create_subscription(String, '/sample', self.sample_callback, 1)
         self.brain_update_publisher = self.create_publisher(String, '/brain/update', 10)
 
@@ -39,8 +38,13 @@ class Regression(Node):
             [samples[agent] for agent in samples])
         print(self.batch.check_free_space())
 
+        # Remove dead thread
+        try:
+            self.threads = [t for t in self.threads if t.isAlive()]
+        except:
+            self.threads = []
+
         # Insert batch into learning thread
-        self.threads = [t for t in self.threads if t.isAlive()]
         if self.batch.check_free_space() <= 0:
             t = threading.Thread(
                 target=self.learning,
@@ -60,9 +64,9 @@ class Regression(Node):
         act_answer = torch.tensor(act_answer).float()
 
         # Train the brain
-        act = self.brain(obs)
-        loss = self.criterion(act, act_answer)
         self.optimizer.zero_grad()
+        act = self.brain.get_action(obs)
+        loss = self.criterion(act, act_answer)
         loss.backward()
         self.optimizer.step()
 

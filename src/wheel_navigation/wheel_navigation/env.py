@@ -62,10 +62,11 @@ class Environment(Node):
         self.env.step()
         exp = self.get_experience()
         obs = list(map(lambda agent: exp[agent]['obs'], exp))
+        obs = torch.tensor(obs)
 
         # Get action
         with torch.no_grad():
-            act = self.brain.get_actions(torch.tensor(obs))
+            act = self.brain.get_action(obs)
 
         # Set action
         try:
@@ -101,6 +102,7 @@ class Environment(Node):
                 exp[agent]
             except:
                 exp[agent] = {}
+                exp[agent]['agent'] = agent
                 exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
                 exp[agent]['reward'] = float(terminal_steps[agent].reward)
                 exp[agent]['done'] = True
@@ -109,6 +111,7 @@ class Environment(Node):
                 exp[agent]
             except:
                 exp[agent] = {}
+                exp[agent]['agent'] = agent
                 exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
                 exp[agent]['reward'] = float(decision_steps[agent].reward)
                 exp[agent]['done'] = False
@@ -119,13 +122,12 @@ class Environment(Node):
         # Generate a sample from experiences
         sample = {}
         for agent in exp:
-            if self.pre_exp[agent]['done'] is True:
-                continue
             sample[str(agent)] = {}
+            sample[str(agent)]['agent'] = float(exp[agent]['agent'])
             sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
-            sample[str(agent)]['act'] = act[agent]
             sample[str(agent)]['reward'] = exp[agent]['reward']
             sample[str(agent)]['done'] = exp[agent]['done']
+            sample[str(agent)]['act'] = act[agent]
             sample[str(agent)]['next_obs'] = exp[agent]['obs']
 
         # Convert sample to json
