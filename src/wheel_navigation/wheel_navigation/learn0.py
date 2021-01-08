@@ -57,16 +57,24 @@ class Regression(Node):
     def learning(self, batch):
         obs = [samples['obs'] for samples in batch.data]
         target = [o[38:40] for o in obs]
+        obs = torch.tensor(obs).float()
 
         # Calculate answers of supervisor
         act_answer = [self.supervisor(t) for t in target]
-        obs = torch.tensor(obs).float()
         act_answer = torch.tensor(act_answer).float()
+
+        # Calculate loss
+        act = self.brain(obs)
+
+        a = obs.grad
+        print(a)
+        
+        # act = [samples['act'] for samples in batch.data]
+        # act = torch.tensor(act, requires_grad=True).float()
+        loss = self.criterion(act, act_answer)
 
         # Train the brain
         self.optimizer.zero_grad()
-        act = self.brain.get_action(obs)
-        loss = self.criterion(act, act_answer)
         loss.backward()
         self.optimizer.step()
 

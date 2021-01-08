@@ -19,7 +19,7 @@ class SPG(Node):
     def __init__(self):
         # Initialize brain
         self.brain = Brain(num_input=40, num_output=9)
-        self.batch = Batch(size=1000)
+        self.batch = Batch(size=1)
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
 
         # Initialize ROS
@@ -65,8 +65,11 @@ class SPG(Node):
         self.optimizer.zero_grad()
 
         policy = self.brain.get_policy(obs)
-        
-        # logp = 
+        # logp = [p.log_prob(act[i]) for i, p in enumerate(policy)]
+        for i, p in enumerate(policy):
+            print([i, p, act[i]])
+            logp = p.log_prob(act[i])
+            print(logp)
 
 
         # loss = -(logp * weights).mean()
