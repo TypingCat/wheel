@@ -21,8 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'regression = wheel_navigation.regression:main',
-            'sim1 = wheel_navigation.sim1:main',
-            'learn1 = wheel_navigation.learn1:main',
+            'spg = wheel_navigation.spg:main',
         ],
     },
 )

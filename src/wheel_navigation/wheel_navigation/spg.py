@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 
 import torch
-import numpy as np
-import math
 import time
-
 import rclpy
 from rclpy.node import Node
 
@@ -12,6 +9,9 @@ from wheel_navigation.env import Unity
 
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
+    ACTION = [[ 1., 1.], [ 1., 0.], [ 1., -1.],
+              [ 0., 1.], [ 0., 0.], [ 0., -1.],
+              [-1., 1.], [-1., 0.], [-1., -1.]]
     
     def __init__(self, num_input, num_output, num_hidden=40):
         super(Brain, self).__init__()
@@ -24,19 +24,6 @@ class Brain(torch.nn.Module):
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-
-    def supervisor(target):
-        """Simple P-control that prioritizes angular velocity"""
-        distance = target[:, 0].tolist()
-        angle = target[:, 1].tolist()
-        
-        angular_ctrl = [np.sign(a)*min(abs(a), 1) for a in angle]
-        linear_weight = [math.cos(min(abs(a), 0.5*math.pi)) for a in angle]
-        linear_ctrl = [w*np.sign(d)*min(abs(d), 1) for w, d in zip(linear_weight, distance)]
-        
-        return torch.cat([
-            torch.tensor(linear_ctrl).unsqueeze(1),
-            torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
 
 class Batch:
     def __init__(self, size):
@@ -54,21 +41,28 @@ class Batch:
             self.data = torch.empty(0, sample.shape[1])
         if self.check_free_space() > 0:
             self.data = torch.cat([self.data, sample], dim=0)
-            
-class Regression(Node):
-    """Simple regression for test the learning environment"""
+
+class SPG(Node):
+    """Simple Policy Gradient"""
 
     def __init__(self):
-        super().__init__('wheel_navigation_regression')
-        self.brain = Brain(num_input=40, num_output=2)
-        self.batch = Batch(size=60)
-        self.criterion = torch.nn.MSELoss()
+        super().__init__('wheel_navigation_spg')
+        self.brain = Brain(num_input=40, num_output=9)
+        self.batch = Batch(size=120)
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
         print(self.brain)
         
         self.get_logger().warning("Wait for Unity scene play")
         self.unity = Unity()
         self.get_logger().info("Unity environment connected")
+
+        # Initialize experience
+        # exp = {}
+        # while(len(exp) == 0):
+        #     print(".", end="")
+        #     self.env.step()
+        #     exp = self.get_experience()
+        # self.pre_exp = exp
 
         # Initialize ROS
         self.get_logger().info("Start simulation")
@@ -84,38 +78,56 @@ class Regression(Node):
 
         # Set commands
         obs = torch.tensor([exp[agent]['obs'] for agent in exp.keys()])
-        act = self.brain(obs)
-        self.unity.set_command(act)
-        
+        logits = self.brain(obs)
+        policy = torch.distributions.categorical.Categorical(logits=logits)
+        act = policy.sample()
+        cmd = torch.tensor([Brain.ACTION[a] for a in act])
+        self.unity.set_command(cmd)
+
+        # Calculate weights
+
+
+
+
         # Accumulate samples into batch
-        sample = torch.cat([obs, act], dim=1)
+        # for agent in exp:
+        #     sample[str(agent)] = {}
+        #     sample[str(agent)]['agent'] = float(exp[agent]['agent'])
+        #     sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
+        #     sample[str(agent)]['reward'] = exp[agent]['reward']
+        #     sample[str(agent)]['done'] = exp[agent]['done']
+        #     sample[str(agent)]['act'] = act[agent]
+        #     sample[str(agent)]['next_obs'] = exp[agent]['obs']
+        logp = policy.log_prob(act).unsqueeze(dim=1)
+        sample = torch.cat([obs, logp], dim=1)
         self.batch.extend(sample)
 
-        # Start learning
-        if self.batch.check_free_space() <= 0:
-            loss = self.learning()
-            self.get_logger().warning(
-                f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
+        # # Start learning
+        # if self.batch.check_free_space() <= 0:
+        #     loss = self.learning()
+        #     self.get_logger().warning(
+        #         f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
+        print("!")
 
     def learning(self):
         """Training the brain using batch data"""
-        target = self.batch.data[:, 38:40]
-        act = self.batch.data[:, 40:42]
+        obs = self.batch.data[:, 0:40]
+        logp = self.batch.data[:, 40:41]
 
         # Calculate loss
-        advice = Brain.supervisor(target)
-        loss = self.criterion(act, advice)
+        # logp = get_policy(obs).log_prob(act)
+        # loss = -(logp * weights).mean()
         
-        # Optimize the brain
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-        self.batch.reset()
-        return loss
+        # # Optimize the brain
+        # self.optimizer.zero_grad()
+        # loss.backward()
+        # self.optimizer.step()
+        # self.batch.reset()
+        return 0.
 
 def main(args=None):
     rclpy.init(args=args)
-    node = Regression()
+    node = SPG()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
