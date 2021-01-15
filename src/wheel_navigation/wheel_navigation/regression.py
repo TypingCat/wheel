@@ -4,21 +4,14 @@ import rclpy
 
 import torch
 
-from wheel_navigation.env import Environment
-
 from rclpy.node import Node
-from std_msgs.msg import String
 
 from mlagents_envs.environment import UnityEnvironment
-import copy
-import json
 
 import torch
 import numpy as np
 import math
 import time
-
-from wheel_navigation.env import Batch
 
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
@@ -35,10 +28,10 @@ class Brain(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-    def get_command(self, act):
+    def get_command(act):
         return act
 
-    def supervisor(self, target):
+    def supervisor(target):
         """Simple P-control that prioritizes angular velocity"""
         distance = target[:, 0].tolist()
         angle = target[:, 1].tolist()
@@ -50,6 +43,23 @@ class Brain(torch.nn.Module):
         return torch.cat([
             torch.tensor(linear_ctrl).unsqueeze(1),
             torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
+
+class Batch:
+    def __init__(self, size):
+        self.size = size
+        self.reset()
+        
+    def reset(self):
+        self.data = torch.empty(0, 0)
+
+    def check_free_space(self):
+        return self.size - self.data.shape[0]
+
+    def extend(self, sample):
+        if self.data.shape[0] == 0:
+            self.data = torch.empty(0, sample.shape[1])
+        if self.check_free_space() > 0:
+            self.data = torch.cat([self.data, sample], dim=0)
 
 class Unity():
     def __init__(self):
@@ -81,29 +91,9 @@ class Unity():
 
     def get_experience(self):
         """Get observation, done, reward from unity environment"""
-
-        # exp = {}
-        # decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-        # for agent in terminal_steps:
-        #     try:
-        #         exp[agent]
-        #     except:
-        #         exp[agent] = {}
-        #         exp[agent]['agent'] = agent
-        #         exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
-        #         exp[agent]['reward'] = float(terminal_steps[agent].reward)
-        #         exp[agent]['done'] = True
-        # for agent in decision_steps:
-        #     try:
-        #         exp[agent]
-        #     except:
-        #         exp[agent] = {}
-        #         exp[agent]['agent'] = agent
-        #         exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
-        #         exp[agent]['reward'] = float(decision_steps[agent].reward)
-        #         exp[agent]['done'] = False
         exp = {}
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
+
         if len(set(decision_steps) - set(terminal_steps)) == len(self.agents):
             for agent in self.agents:
                 exp[agent] = {}
@@ -117,7 +107,7 @@ class Unity():
                 exp[agent]['done'] = False
         return exp
     
-    def set_commend(self, cmd):
+    def set_command(self, cmd):
         self.env.set_actions(self.behavior, cmd.detach().numpy())
 
 class Regression(Node):
@@ -128,14 +118,14 @@ class Regression(Node):
         self.brain = Brain(num_input=40, num_output=2)
         self.batch = Batch(size=1)
         self.criterion = torch.nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
+        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
         print(self.brain)
         
         self.get_logger().warning("Wait for Unity scene play")
         self.unity = Unity()
         self.get_logger().info("Unity environment connected")
 
-        # # Initialize experience
+        # Initialize experience
         # exp = {}
         # while(len(exp) == 0):
         #     print(".", end="")
@@ -145,8 +135,6 @@ class Regression(Node):
 
         # Initialize ROS
         self.get_logger().info("Start simulation")
-        # self.sample_publisher = self.create_publisher(String, '/sample', 10)
-        # self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
         self.time_start = time.time()
         self.timer = self.create_timer(0.2, self.timer_callback)
 
@@ -156,17 +144,14 @@ class Regression(Node):
         exp = self.unity.get_experience()
         if not exp:
             return
-        # exp[agent]['obs']
-        # exp[agent]['reward']
-        # exp[agent]['done']
 
         # Set actions
         obs = torch.tensor([exp[agent]['obs'] for agent in exp.keys()])
         act = self.brain(obs)
-        cmd = self.brain.get_command(act)
-        self.unity.set_commend(cmd)
+        cmd = Brain.get_command(act)
+        self.unity.set_command(cmd)
         
-        # Publish experience
+        # Accumulate samples into batch
         # for agent in exp:
         #     sample[str(agent)] = {}
         #     sample[str(agent)]['agent'] = float(exp[agent]['agent'])
@@ -175,71 +160,30 @@ class Regression(Node):
         #     sample[str(agent)]['done'] = exp[agent]['done']
         #     sample[str(agent)]['act'] = act[agent]
         #     sample[str(agent)]['next_obs'] = exp[agent]['obs']
-        # Accumulate samples into batch
-        # samples = json.loads(msg.data)
-        # self.batch.extend(
-        #     [samples[agent] for agent in samples])
-        # print(self.batch.check_free_space())
         sample = torch.cat([obs, act], dim=1)
         self.batch.extend(sample)
 
-        # # Calculate loss
-        # target = [o[38:40] for o in obs]
-        # act_answer = [self.supervisor(t) for t in target]
-        # act_answer = torch.tensor(act_answer).float()
-        # loss = self.criterion(act, act_answer)
-
         # Start learning
         if self.batch.check_free_space() <= 0:
-
-            # Calculate loss
-            target = self.batch.data[:, 38:40]
-            advice = self.brain.supervisor(target)
-            loss = self.criterion(act, advice)
-            
-            # Calculate gradient
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            # Brain update!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            loss = self.learning()
             self.get_logger().warning(
                 f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
-            
+
+    def learning(self):
+        """Training the brain using batch data"""
+        target = self.batch.data[:, 38:40]
+        act = self.batch.data[:, 40:42]
+
+        # Calculate loss
+        advice = Brain.supervisor(target)
+        loss = self.criterion(act, advice)
         
-
-
-
-        
-
-    def brain_update_callback(self, msg):
-        """Syncronize brain using json state"""
-
-        # Convert json to tensor
-        state_list = json.loads(msg.data)
-        state_tensor = {}
-        for key, value in state_list.items():
-            state_tensor[key] = torch.tensor(value)
-
-        # Update brain with msg
-        self.brain.load_state_dict(state_tensor)
-
-    # def pack_sample(self, exp, act):
-    #     # Generate a sample from experiences
-    #     sample = {}
-    #     for agent in exp:
-    #         sample[str(agent)] = {}
-    #         sample[str(agent)]['agent'] = float(exp[agent]['agent'])
-    #         sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
-    #         sample[str(agent)]['reward'] = exp[agent]['reward']
-    #         sample[str(agent)]['done'] = exp[agent]['done']
-    #         sample[str(agent)]['act'] = act[agent]
-    #         sample[str(agent)]['next_obs'] = exp[agent]['obs']
-
-    #     # Convert sample to json
-    #     sample_json = String()
-    #     sample_json.data = json.dumps(sample)
-    #     return sample_json
+        # Optimize the brain
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        self.batch.reset()
+        return loss
 
 def main(args=None):
     rclpy.init(args=args)

@@ -136,19 +136,3 @@ class Environment(Node):
         sample_json.data = json.dumps(sample)
         return sample_json
 
-class Batch:
-    def __init__(self, size):
-        self.size = size
-        self.reset()
-        
-    def reset(self):
-        self.data = torch.empty(0, 0)
-
-    def check_free_space(self):
-        return self.size - self.data.shape[0]
-
-    def extend(self, sample):
-        if self.data.shape[0] == 0:
-            self.data = torch.empty(0, sample.shape[1])
-        if self.check_free_space() > 0:
-            self.data = torch.cat([self.data, sample], dim=0)
