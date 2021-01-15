@@ -142,11 +142,13 @@ class Batch:
         self.reset()
         
     def reset(self):
-        self.data = []
+        self.data = torch.empty(0, 0)
 
     def check_free_space(self):
-        return self.size - len(self.data)
+        return self.size - self.data.shape[0]
 
-    def extend(self, samples):
-        if self.check_free_space() > 0:     # Allows oversize
-            self.data += samples
+    def extend(self, sample):
+        if self.data.shape[0] == 0:
+            self.data = torch.empty(0, sample.shape[1])
+        if self.check_free_space() > 0:
+            self.data = torch.cat([self.data, sample], dim=0)

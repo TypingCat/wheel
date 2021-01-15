@@ -14,6 +14,11 @@ import copy
 import json
 
 import torch
+import numpy as np
+import math
+import time
+
+from wheel_navigation.env import Batch
 
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
@@ -33,9 +38,28 @@ class Brain(torch.nn.Module):
     def get_command(self, act):
         return act
 
+    def supervisor(self, target):
+        """Simple P-control that prioritizes angular velocity"""
+        distance = target[:, 0].tolist()
+        angle = target[:, 1].tolist()
+        
+        angular_ctrl = [np.sign(a)*min(abs(a), 1) for a in angle]
+        linear_weight = [math.cos(min(abs(a), 0.5*math.pi)) for a in angle]
+        linear_ctrl = [w*np.sign(d)*min(abs(d), 1) for w, d in zip(linear_weight, distance)]
+        
+        return torch.cat([
+            torch.tensor(linear_ctrl).unsqueeze(1),
+            torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
+
 class Unity():
     def __init__(self):
         self.connect()
+
+    def __del__(self):
+        try:
+            self.env.close()
+        except:
+            pass
 
     def connect(self):
         # Connect with Unity
@@ -48,26 +72,65 @@ class Unity():
             break
         spec = self.env.behavior_specs[self.behavior]
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-        agents = list(set(list(decision_steps.agent_id) + list(terminal_steps.agent_id)))
+        self.agents = list(set(list(decision_steps.agent_id) + list(terminal_steps.agent_id)))
+
         print(f"Behavior name: {self.behavior}")
         print(f"Observation shapes: {spec.observation_shapes}")
         print(f"Action specifications: {spec.action_spec}")
-        print(f"Agents: {agents}")
+        print(f"Agents: {self.agents}")
 
-    def __del__(self):
-        try:
-            self.env.close()
-        except:
-            pass
+    def get_experience(self):
+        """Get observation, done, reward from unity environment"""
+
+        # exp = {}
+        # decision_steps, terminal_steps = self.env.get_steps(self.behavior)
+        # for agent in terminal_steps:
+        #     try:
+        #         exp[agent]
+        #     except:
+        #         exp[agent] = {}
+        #         exp[agent]['agent'] = agent
+        #         exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
+        #         exp[agent]['reward'] = float(terminal_steps[agent].reward)
+        #         exp[agent]['done'] = True
+        # for agent in decision_steps:
+        #     try:
+        #         exp[agent]
+        #     except:
+        #         exp[agent] = {}
+        #         exp[agent]['agent'] = agent
+        #         exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
+        #         exp[agent]['reward'] = float(decision_steps[agent].reward)
+        #         exp[agent]['done'] = False
+        exp = {}
+        decision_steps, terminal_steps = self.env.get_steps(self.behavior)
+        if len(set(decision_steps) - set(terminal_steps)) == len(self.agents):
+            for agent in self.agents:
+                exp[agent] = {}
+            for agent in terminal_steps:
+                exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
+                exp[agent]['reward'] = float(terminal_steps[agent].reward)
+                exp[agent]['done'] = True
+            for agent in list(set(decision_steps) - set(terminal_steps)):
+                exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
+                exp[agent]['reward'] = float(decision_steps[agent].reward)
+                exp[agent]['done'] = False
+        return exp
+    
+    def set_commend(self, cmd):
+        self.env.set_actions(self.behavior, cmd.detach().numpy())
 
 class Regression(Node):
     """Simple regression for test the learning environment"""
 
     def __init__(self):
         super().__init__('wheel_navigation_regression')
-        self.brain = Brain(40, 2)
+        self.brain = Brain(num_input=40, num_output=2)
+        self.batch = Batch(size=1)
+        self.criterion = torch.nn.MSELoss()
+        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
         print(self.brain)
-
+        
         self.get_logger().warning("Wait for Unity scene play")
         self.unity = Unity()
         self.get_logger().info("Unity environment connected")
@@ -84,30 +147,70 @@ class Regression(Node):
         self.get_logger().info("Start simulation")
         # self.sample_publisher = self.create_publisher(String, '/sample', 10)
         # self.brain_state_subscription = self.create_subscription(String, '/brain/update', self.brain_update_callback, 1)
+        self.time_start = time.time()
         self.timer = self.create_timer(0.2, self.timer_callback)
 
     def timer_callback(self):
         # Simulate environment one-step forward
-        self.env.step()
-        exp = self.get_experience()
-        obs = list(map(lambda agent: exp[agent]['obs'], exp))
-        obs = torch.tensor(obs)
-
-        # Get action
-        with torch.no_grad():
-            act = self.brain(obs)
-            cmd = self.brain.get_command(act)
-
-        # Set action
-        try:
-            self.env.set_actions(self.behavior, cmd.numpy())
-        except:
+        self.unity.env.step()
+        exp = self.unity.get_experience()
+        if not exp:
             return
+        # exp[agent]['obs']
+        # exp[agent]['reward']
+        # exp[agent]['done']
 
+        # Set actions
+        obs = torch.tensor([exp[agent]['obs'] for agent in exp.keys()])
+        act = self.brain(obs)
+        cmd = self.brain.get_command(act)
+        self.unity.set_commend(cmd)
+        
         # Publish experience
-        sample = self.pack_sample(exp, act.tolist())
-        self.sample_publisher.publish(sample)
-        self.pre_exp = copy.deepcopy(exp)
+        # for agent in exp:
+        #     sample[str(agent)] = {}
+        #     sample[str(agent)]['agent'] = float(exp[agent]['agent'])
+        #     sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
+        #     sample[str(agent)]['reward'] = exp[agent]['reward']
+        #     sample[str(agent)]['done'] = exp[agent]['done']
+        #     sample[str(agent)]['act'] = act[agent]
+        #     sample[str(agent)]['next_obs'] = exp[agent]['obs']
+        # Accumulate samples into batch
+        # samples = json.loads(msg.data)
+        # self.batch.extend(
+        #     [samples[agent] for agent in samples])
+        # print(self.batch.check_free_space())
+        sample = torch.cat([obs, act], dim=1)
+        self.batch.extend(sample)
+
+        # # Calculate loss
+        # target = [o[38:40] for o in obs]
+        # act_answer = [self.supervisor(t) for t in target]
+        # act_answer = torch.tensor(act_answer).float()
+        # loss = self.criterion(act, act_answer)
+
+        # Start learning
+        if self.batch.check_free_space() <= 0:
+
+            # Calculate loss
+            target = self.batch.data[:, 38:40]
+            advice = self.brain.supervisor(target)
+            loss = self.criterion(act, advice)
+            
+            # Calculate gradient
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+            # Brain update!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            self.get_logger().warning(
+                f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
+            
+        
+
+
+
+        
 
     def brain_update_callback(self, msg):
         """Syncronize brain using json state"""
@@ -121,64 +224,22 @@ class Regression(Node):
         # Update brain with msg
         self.brain.load_state_dict(state_tensor)
 
-    def get_experience(self):
-        """Get observation, done, reward from unity environment"""
+    # def pack_sample(self, exp, act):
+    #     # Generate a sample from experiences
+    #     sample = {}
+    #     for agent in exp:
+    #         sample[str(agent)] = {}
+    #         sample[str(agent)]['agent'] = float(exp[agent]['agent'])
+    #         sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
+    #         sample[str(agent)]['reward'] = exp[agent]['reward']
+    #         sample[str(agent)]['done'] = exp[agent]['done']
+    #         sample[str(agent)]['act'] = act[agent]
+    #         sample[str(agent)]['next_obs'] = exp[agent]['obs']
 
-        # Organize experiences into a dictionary
-        exp = {}
-        decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-        for agent in terminal_steps:
-            try:
-                exp[agent]
-            except:
-                exp[agent] = {}
-                exp[agent]['agent'] = agent
-                exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
-                exp[agent]['reward'] = float(terminal_steps[agent].reward)
-                exp[agent]['done'] = True
-        for agent in decision_steps:
-            try:
-                exp[agent]
-            except:
-                exp[agent] = {}
-                exp[agent]['agent'] = agent
-                exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
-                exp[agent]['reward'] = float(decision_steps[agent].reward)
-                exp[agent]['done'] = False
-
-        return exp
-
-    def pack_sample(self, exp, act):
-        # Generate a sample from experiences
-        sample = {}
-        for agent in exp:
-            sample[str(agent)] = {}
-            sample[str(agent)]['agent'] = float(exp[agent]['agent'])
-            sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
-            sample[str(agent)]['reward'] = exp[agent]['reward']
-            sample[str(agent)]['done'] = exp[agent]['done']
-            sample[str(agent)]['act'] = act[agent]
-            sample[str(agent)]['next_obs'] = exp[agent]['obs']
-
-        # Convert sample to json
-        sample_json = String()
-        sample_json.data = json.dumps(sample)
-        return sample_json
-
-class Batch:
-    def __init__(self, size):
-        self.size = size
-        self.reset()
-        
-    def reset(self):
-        self.data = []
-
-    def check_free_space(self):
-        return self.size - len(self.data)
-
-    def extend(self, samples):
-        if self.check_free_space() > 0:     # Allows oversize
-            self.data += samples
+    #     # Convert sample to json
+    #     sample_json = String()
+    #     sample_json.data = json.dumps(sample)
+    #     return sample_json
 
 def main(args=None):
     rclpy.init(args=args)
