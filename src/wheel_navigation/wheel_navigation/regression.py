@@ -83,7 +83,7 @@ class Regression(Node):
             return
 
         # Set commands
-        obs = torch.tensor([exp[agent]['obs'] for agent in exp.keys()])
+        obs = torch.tensor([exp[agent]['obs'] for agent in exp])
         act = self.brain(obs)
         self.unity.set_command(act)
         

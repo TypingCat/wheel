@@ -77,7 +77,7 @@ class SPG(Node):
             return
 
         # Set commands
-        obs = torch.tensor([exp[agent]['obs'] for agent in exp.keys()])
+        obs = torch.tensor([exp[agent]['obs'] for agent in exp])
         logits = self.brain(obs)
         policy = torch.distributions.categorical.Categorical(logits=logits)
         act = policy.sample()
