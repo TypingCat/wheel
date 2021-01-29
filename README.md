@@ -17,7 +17,7 @@ The following is a simple demo video of the [regression](https://github.com/fini
     ros2 launch wheel getup.launch.py
     ros2 launch wheel play.launch.py
     ```
-- Simulate mobile robots
+- Train agents
     ``` bash
     ros2 run wheel_navigation regression
     ros2 run wheel_navigation spg

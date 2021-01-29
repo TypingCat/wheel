@@ -26,21 +26,35 @@ class Brain(torch.nn.Module):
         return x
 
 class Batch:
-    def __init__(self, size):
-        self.size = size
+    def __init__(self):
         self.reset()
         
     def reset(self):
-        self.data = torch.empty(0, 0)
+        self.temp = {}
+        self.data = []
 
-    def check_free_space(self):
-        return self.size - self.data.shape[0]
+    def size(self):
+        return sum([d.shape[0] for d in self.data])
 
-    def extend(self, sample):
-        if self.data.shape[0] == 0:
-            self.data = torch.empty(0, sample.shape[1])
-        if self.check_free_space() > 0:
-            self.data = torch.cat([self.data, sample], dim=0)
+    def store(self, exp, act):
+        """Save experiences and wrap finished episodes"""
+        # sample[ 0:40] = observation
+        # sample[40:41] = action
+        # sample[41:42] = reward
+        for i, agent in enumerate(exp):
+            sample = torch.cat([exp[agent]['obs'], act[i:i+1].unsqueeze(1), exp[agent]['reward']], dim=1)
+            if agent not in self.temp.keys():
+                self.temp[agent] = sample
+            else:
+                self.temp[agent] = torch.cat([self.temp[agent], sample], dim=0)
+            if exp[agent]['done']:
+                self.data.append(self.temp[agent])
+                del self.temp[agent]
+    
+    def pop(self):
+        episodes = self.data
+        self.data = []
+        return episodes
 
 class SPG(Node):
     """Simple Policy Gradient"""
@@ -48,21 +62,14 @@ class SPG(Node):
     def __init__(self):
         super().__init__('wheel_navigation_spg')
         self.brain = Brain(num_input=40, num_output=9)
-        self.batch = Batch(size=120)
+        self.batch = Batch()
+        self.batch_size_max = 500
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
         print(self.brain)
         
         self.get_logger().warning("Wait for Unity scene play")
         self.unity = Unity()
         self.get_logger().info("Unity environment connected")
-
-        # Initialize experience
-        # exp = {}
-        # while(len(exp) == 0):
-        #     print(".", end="")
-        #     self.env.step()
-        #     exp = self.get_experience()
-        # self.pre_exp = exp
 
         # Initialize ROS
         self.get_logger().info("Start simulation")
@@ -73,57 +80,45 @@ class SPG(Node):
         # Simulate environment one-step forward
         self.unity.env.step()
         exp = self.unity.get_experience()
-        if not exp:
-            return
+        if not exp: return
 
         # Set commands
-        obs = torch.tensor([exp[agent]['obs'] for agent in exp])
-        logits = self.brain(obs)
-        policy = torch.distributions.categorical.Categorical(logits=logits)
-        act = policy.sample()
-        cmd = torch.tensor([Brain.ACTION[a] for a in act])
-        self.unity.set_command(cmd)
-
-        # Calculate weights
-
-
-
-
-        # Accumulate samples into batch
-        # for agent in exp:
-        #     sample[str(agent)] = {}
-        #     sample[str(agent)]['agent'] = float(exp[agent]['agent'])
-        #     sample[str(agent)]['obs'] = self.pre_exp[agent]['obs']
-        #     sample[str(agent)]['reward'] = exp[agent]['reward']
-        #     sample[str(agent)]['done'] = exp[agent]['done']
-        #     sample[str(agent)]['act'] = act[agent]
-        #     sample[str(agent)]['next_obs'] = exp[agent]['obs']
-        logp = policy.log_prob(act).unsqueeze(dim=1)
-        sample = torch.cat([obs, logp], dim=1)
-        self.batch.extend(sample)
-
-        # # Start learning
-        # if self.batch.check_free_space() <= 0:
-        #     loss = self.learning()
-        #     self.get_logger().warning(
-        #         f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
-        print("!")
+        obs = torch.cat([exp[agent]['obs'] for agent in exp], dim=0)
+        with torch.no_grad():
+            logit = self.brain(obs)
+            policy = torch.distributions.categorical.Categorical(logits=logit)
+            act = policy.sample()
+            cmd = torch.tensor([Brain.ACTION[a] for a in act])
+            self.unity.set_command(cmd)
+            self.batch.store(exp, act)
+        
+        # Start learning
+        if self.batch.size() > self.batch_size_max:
+            loss = self.learning()
+            self.get_logger().warning(
+                f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
 
     def learning(self):
         """Training the brain using batch data"""
-        obs = self.batch.data[:, 0:40]
-        logp = self.batch.data[:, 40:41]
+        episodes = self.batch.pop()
+
+        # Merge episodes
+        for episode in episodes:    # Replace rewards with weights
+            episode[:, -1] = sum(episode[:, -1]) * torch.ones_like(episode[:, -1])
+        data = torch.cat(episodes, dim=0)
 
         # Calculate loss
-        # logp = get_policy(obs).log_prob(act)
-        # loss = -(logp * weights).mean()
-        
-        # # Optimize the brain
-        # self.optimizer.zero_grad()
-        # loss.backward()
-        # self.optimizer.step()
-        # self.batch.reset()
-        return 0.
+        logit = self.brain(data[:, 0:40])
+        policy = torch.distributions.categorical.Categorical(logits=logit)
+        logp = policy.log_prob(data[:, -2])
+        weight = data[:, -1]
+        loss = -(logp * weight).mean()
+
+        # Optimize the brain
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        return loss
 
 def main(args=None):
     rclpy.init(args=args)

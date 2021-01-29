@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import torch
+
 from mlagents_envs.environment import UnityEnvironment
 
 class Unity():
@@ -32,19 +34,21 @@ class Unity():
 
     def get_experience(self):
         """Get observation, done, reward from unity environment"""
-        exp = {}
+        # observation[ 0:36] = scan results
+        # observation[36:38] = linear/angular velocity of robot
+        # observation[38:40] = distance/angle to target
         decision_steps, terminal_steps = self.env.get_steps(self.behavior)
-
-        if len(set(decision_steps) - set(terminal_steps)) == len(self.agents):
-            for agent in self.agents:
-                exp[agent] = {}
+        exp = {}
+            
+        if len(set(decision_steps) | set(terminal_steps)) == len(self.agents):
+            for agent in self.agents: exp[agent] = {}
             for agent in terminal_steps:
-                exp[agent]['obs'] = list(map(float, terminal_steps[agent].obs[0].tolist()))
-                exp[agent]['reward'] = float(terminal_steps[agent].reward)
+                exp[agent]['obs'] = torch.from_numpy(terminal_steps[agent].obs[0]).unsqueeze(0)
+                exp[agent]['reward'] = torch.tensor([terminal_steps[agent].reward]).unsqueeze(0)
                 exp[agent]['done'] = True
             for agent in list(set(decision_steps) - set(terminal_steps)):
-                exp[agent]['obs'] = list(map(float, decision_steps[agent].obs[0].tolist()))
-                exp[agent]['reward'] = float(decision_steps[agent].reward)
+                exp[agent]['obs'] = torch.from_numpy(decision_steps[agent].obs[0]).unsqueeze(0)
+                exp[agent]['reward'] = torch.tensor([decision_steps[agent].reward]).unsqueeze(0)
                 exp[agent]['done'] = False
         return exp
     

@@ -79,15 +79,14 @@ class Regression(Node):
         # Simulate environment one-step forward
         self.unity.env.step()
         exp = self.unity.get_experience()
-        if not exp:
-            return
+        if not exp: return
 
         # Set commands
         obs = torch.tensor([exp[agent]['obs'] for agent in exp])
         act = self.brain(obs)
         self.unity.set_command(act)
         
-        # Accumulate samples into batch
+        # Store samples into batch
         sample = torch.cat([obs, act], dim=1)
         self.batch.extend(sample)
 
