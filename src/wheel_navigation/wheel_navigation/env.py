@@ -54,3 +54,34 @@ class Unity():
     
     def set_command(self, cmd):
         self.env.set_actions(self.behavior, cmd.detach().numpy())
+
+class Batch:
+    def __init__(self):
+        self.reset()
+        
+    def reset(self):
+        self.temp = {}
+        self.data = []
+
+    def size(self):
+        return sum([d.shape[0] for d in self.data])
+
+    def store(self, exp, act):
+        """Save experiences and wrap finished episodes"""
+        # sample[ 0:40] = observation
+        # sample[40:41] = action
+        # sample[41:42] = reward
+        for i, agent in enumerate(exp):
+            sample = torch.cat([exp[agent]['obs'], act[i:i+1].unsqueeze(1), exp[agent]['reward']], dim=1)
+            if agent not in self.temp.keys():
+                self.temp[agent] = sample
+            else:
+                self.temp[agent] = torch.cat([self.temp[agent], sample], dim=0)
+            if exp[agent]['done']:
+                self.data.append(self.temp[agent])
+                del self.temp[agent]
+    
+    def pop(self):
+        episodes = self.data
+        self.data = []
+        return episodes
