@@ -37,23 +37,6 @@ class Brain(torch.nn.Module):
         return torch.cat([
             torch.tensor(linear_ctrl).unsqueeze(1),
             torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
-
-class Batch:
-    def __init__(self, size):
-        self.size = size
-        self.reset()
-        
-    def reset(self):
-        self.data = torch.empty(0, 0)
-
-    def check_free_space(self):
-        return self.size - self.data.shape[0]
-
-    def extend(self, sample):
-        if self.data.shape[0] == 0:
-            self.data = torch.empty(0, sample.shape[1])
-        if self.check_free_space() > 0:
-            self.data = torch.cat([self.data, sample], dim=0)
             
 class Regression(Node):
     """Simple regression for test the learning environment"""
@@ -61,7 +44,8 @@ class Regression(Node):
     def __init__(self):
         super().__init__('wheel_navigation_regression')
         self.brain = Brain(num_input=40, num_output=2)
-        self.batch = Batch(size=60)
+        self.batch = []
+        self.batch_size_max = 60
         self.criterion = torch.nn.MSELoss()
         self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
         print(self.brain)
@@ -79,30 +63,31 @@ class Regression(Node):
         # Simulate environment one-step forward
         self.unity.env.step()
         exp = self.unity.get_experience()
-        if not exp:
-            return
+        if not exp: return
 
         # Set commands
-        obs = torch.tensor([exp[agent]['obs'] for agent in exp.keys()])
+        obs = torch.cat([exp[agent]['obs'] for agent in exp], dim=0)
         act = self.brain(obs)
         self.unity.set_command(act)
-        
-        # Accumulate samples into batch
-        sample = torch.cat([obs, act], dim=1)
-        self.batch.extend(sample)
+        self.batch.append(torch.cat([obs, act], dim=1))
 
         # Start learning
-        if self.batch.check_free_space() <= 0:
-            loss = self.learning()
+        batch_size = sum([b.shape[0] for b in self.batch])
+        print(f'\rBatch: {batch_size}/{self.batch_size_max}', end='')
+        if batch_size >= self.batch_size_max:
+            loss = self.learning(self.batch)
+            self.batch = []
+            print()
             self.get_logger().warning(
                 f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
 
-    def learning(self):
+    def learning(self, batch):
         """Training the brain using batch data"""
-        target = self.batch.data[:, 38:40]
-        act = self.batch.data[:, 40:42]
+        data = torch.cat(batch, dim=0)
 
         # Calculate loss
+        target = data[:, 38:40]
+        act = data[:, 40:42]
         advice = Brain.supervisor(target)
         loss = self.criterion(act, advice)
         
@@ -110,7 +95,6 @@ class Regression(Node):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        self.batch.reset()
         return loss
 
 def main(args=None):

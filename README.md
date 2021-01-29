@@ -1,5 +1,13 @@
 # Wheel
-ROS2 package that develops wheeled mobile robot capabilities
+ROS2 package that develops wheeled mobile robot capabilities using reinforcement learning
+
+
+## [First step: Go to target](https://github.com/finiel/wheel/issues/23)
+Moving toward the target is the basic ability of a mobile robot. The first step is to train the agent to move the robot to the target. The robot simply needs to go straight toward the target, and there are no special obstacles. The real problem is building simulation environments and creating learning algorithms. See issue [#4](https://github.com/finiel/wheel/issues/4) for details.
+
+The following is a simple demo video of the [regression](https://github.com/finiel/wheel/issues/24). These 60 agents are learning to move to the target. If an algorithm succeeds in this step, it is ready to go to the next step.
+
+![regression](https://user-images.githubusercontent.com/16618451/105570210-0fb09480-5d8b-11eb-9833-b22f0722a062.gif)
 
 
 ## Simple Usage
@@ -9,16 +17,11 @@ ROS2 package that develops wheeled mobile robot capabilities
     ros2 launch wheel getup.launch.py
     ros2 launch wheel play.launch.py
     ```
-- Simulate mobile robots
+- Train agents
     ``` bash
-    ros2 launch wheel learn_regression.launch.py
+    ros2 run wheel_navigation regression
+    ros2 run wheel_navigation spg
     ```
-
-
-## Project Structure
-- src/wheel: Main ROS2 package
-- src/wheel_navigation: Navigation with deep reinforcement learning
-- unity/Wheel: Unity project for simulation
 
 
 ## Setup
