@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 
 import torch
-import numpy as np
-import math
 import time
 
 import rclpy
 from rclpy.node import Node
 
-from wheel_navigation.env import Unity
+from wheel_navigation.env import Unity, Batch
 
 class MLP(torch.nn.Module):
     """Multi-Layer Perceptron"""
@@ -25,17 +23,19 @@ class MLP(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-class Regression(Node):
-    """Simple regression for test the learning environment"""
+class VPG(Node):
+    """Vanilla Policy Gradient"""
 
     def __init__(self):
-        super().__init__('wheel_navigation_regression')
-        self.brain = MLP(num_input=40, num_output=2)
-        self.batch = []
-        self.batch_size_max = 60
-        self.criterion = torch.nn.MSELoss()
-        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
-        print(self.brain)
+        super().__init__('wheel_navigation_vpg')
+        self.actor = MLP(num_input=40, num_output=2)
+        self.critic = MLP(num_input=40, num_output=1)
+        self.policy_std = torch.exp(torch.tensor([-0.5, -0.5]))
+        self.batch = Batch()
+        self.batch_size_max = 100
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=0.01)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=0.01)
+        print(self.actor)
         
         self.get_logger().warning("Wait for Unity scene play")
         self.unity = Unity()
@@ -54,52 +54,43 @@ class Regression(Node):
 
         # Set commands
         obs = torch.cat([exp[agent]['obs'] for agent in exp], dim=0)
-        act = self.brain(obs)
+        with torch.no_grad():
+            mu = self.actor(obs)
+            policy = torch.distributions.normal.Normal(mu, self.policy_std)
+            act = policy.sample()
         self.unity.set_command(act)
-        self.batch.append(torch.cat([obs, act], dim=1))
-
+        self.batch.store(exp, act)
+        
         # Start learning
-        batch_size = sum([b.shape[0] for b in self.batch])
-        print(f'\rBatch: {batch_size}/{self.batch_size_max}', end='')
-        if batch_size >= self.batch_size_max:
-            loss = self.learning(self.batch)
-            self.batch = []
+        print(f'\rBatch: {self.batch.size()}/{self.batch_size_max}', end='')
+        if self.batch.size() >= self.batch_size_max:
+            loss = self.learning(self.batch.pop())
             print()
             self.get_logger().warning(
                 f"Time {time.time()-self.time_start:.1f}s, Loss {float(loss):.4f}")
 
     def learning(self, batch):
-        """Training the brain using batch data"""
+        """Training neural network using batch data"""
+        for episode in batch:    # Replace rewards with weights
+            episode[:, 40:41] = sum(episode[:, -1]) * torch.ones(episode.shape[0], 1)
         data = torch.cat(batch, dim=0)
 
         # Calculate loss
-        target = data[:, 38:40]
-        act = data[:, 40:42]
-        advice = supervisor(target)
-        loss = self.criterion(act, advice)
-        
-        # Optimize the brain
+        mu = self.actor(data[:, 0:40])
+        policy = torch.distributions.normal.Normal(mu, self.policy_std)
+        logp = policy.log_prob(data[:, 41:]).sum(axis=1)
+        weight = data[:, 40:41]
+        loss = -(logp * weight).mean()
+
+        # Optimize network
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         return loss
 
-def supervisor(target):
-    """Simple P-control that prioritizes angular velocity"""
-    distance = target[:, 0].tolist()
-    angle = target[:, 1].tolist()
-    
-    angular_ctrl = [np.sign(a)*min(abs(a), 1) for a in angle]
-    linear_weight = [math.cos(min(abs(a), 0.5*math.pi)) for a in angle]
-    linear_ctrl = [w*np.sign(d)*min(abs(d), 1) for w, d in zip(linear_weight, distance)]
-    
-    return torch.cat([
-        torch.tensor(linear_ctrl).unsqueeze(1),
-        torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
-        
 def main(args=None):
     rclpy.init(args=args)
-    node = Regression()
+    node = VPG()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

@@ -5,3 +5,6 @@ log/
 
 # Python
 *.pyc
+
+# Unity
+unity/Wheel/Assets/ML-Agents/Timers/GridWorld_timers.json

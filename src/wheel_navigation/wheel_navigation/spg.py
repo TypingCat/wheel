@@ -8,11 +8,11 @@ from rclpy.node import Node
 
 from wheel_navigation.env import Unity, Batch
 
-class Brain(torch.nn.Module):
-    """Pytorch neural network model"""
+class MLP(torch.nn.Module):
+    """Multi-Layer Perceptron"""
     
     def __init__(self, num_input, num_output, num_hidden=40):
-        super(Brain, self).__init__()
+        super(MLP, self).__init__()
         self.fc1 = torch.nn.Linear(num_input, num_hidden)
         self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
         self.fc3 = torch.nn.Linear(num_hidden, num_output)
@@ -28,7 +28,7 @@ class SPG(Node):
 
     def __init__(self):
         super().__init__('wheel_navigation_spg')
-        self.brain = Brain(num_input=40, num_output=2)
+        self.brain = MLP(num_input=40, num_output=2)
         self.policy_std = torch.exp(torch.tensor([-0.5, -0.5]))
         self.batch = Batch()
         self.batch_size_max = 500
