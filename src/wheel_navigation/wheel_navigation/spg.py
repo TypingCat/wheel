@@ -10,9 +10,6 @@ from wheel_navigation.env import Unity, Batch
 
 class Brain(torch.nn.Module):
     """Pytorch neural network model"""
-    ACTION = [[ 1., 1.], [ 1., 0.], [ 1., -1.],
-              [ 0., 1.], [ 0., 0.], [ 0., -1.],
-              [-1., 1.], [-1., 0.], [-1., -1.]]
     
     def __init__(self, num_input, num_output, num_hidden=40):
         super(Brain, self).__init__()
@@ -31,10 +28,11 @@ class SPG(Node):
 
     def __init__(self):
         super().__init__('wheel_navigation_spg')
-        self.brain = Brain(num_input=40, num_output=9)
+        self.brain = Brain(num_input=40, num_output=2)
+        self.policy_std = torch.exp(torch.tensor([-0.5, -0.5]))
         self.batch = Batch()
-        self.batch_size_max = 100
-        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
+        self.batch_size_max = 500
+        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
         print(self.brain)
         
         self.get_logger().warning("Wait for Unity scene play")
@@ -55,11 +53,10 @@ class SPG(Node):
         # Set commands
         obs = torch.cat([exp[agent]['obs'] for agent in exp], dim=0)
         with torch.no_grad():
-            logit = self.brain(obs)
-            policy = torch.distributions.categorical.Categorical(logits=logit)
+            mu = self.brain(obs)
+            policy = torch.distributions.normal.Normal(mu, self.policy_std)
             act = policy.sample()
-            cmd = torch.tensor([Brain.ACTION[a] for a in act])
-        self.unity.set_command(cmd)
+        self.unity.set_command(act)
         self.batch.store(exp, act)
         
         # Start learning
@@ -73,14 +70,14 @@ class SPG(Node):
     def learning(self, batch):
         """Training the brain using batch data"""
         for episode in batch:    # Replace rewards with weights
-            episode[:, -1] = sum(episode[:, -1]) * torch.ones_like(episode[:, -1])
+            episode[:, 40:41] = sum(episode[:, -1]) * torch.ones(episode.shape[0], 1)
         data = torch.cat(batch, dim=0)
 
         # Calculate loss
-        logit = self.brain(data[:, 0:40])
-        policy = torch.distributions.categorical.Categorical(logits=logit)
-        logp = policy.log_prob(data[:, -2])
-        weight = data[:, -1]
+        mu = self.brain(data[:, 0:40])
+        policy = torch.distributions.normal.Normal(mu, self.policy_std)
+        logp = policy.log_prob(data[:, 41:]).sum(axis=1)
+        weight = data[:, 40:41]
         loss = -(logp * weight).mean()
 
         # Optimize the brain
