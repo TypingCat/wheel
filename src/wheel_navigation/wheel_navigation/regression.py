@@ -71,14 +71,11 @@ class Regression(Node):
     def learning(self, batch):
         """Training the brain using batch data"""
         data = torch.cat(batch, dim=0)
-
-        # Calculate loss
-        target = data[:, 38:40]
-        act = data[:, 40:42]
+        target, act = data[:, 38:40], data[:, 40:42]
         advice = supervisor(target)
+        
         loss = self.criterion(act, advice)
         
-        # Optimize the brain
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

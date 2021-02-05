@@ -1,5 +1,4 @@
-import torch
-import numpy as np
+#!/usr/bin/env python3
 
 def discount_cumsum(arr, discount_factor):
     for i in range(len(arr)-2, -1, -1):
@@ -17,6 +16,6 @@ if __name__ == '__main__':
     adv = discount_cumsum(delta, gamma*lamda)
     ret = discount_cumsum(rew, gamma)
 
-    print(delta)
+    # Results
     print(adv)
     print(ret)
