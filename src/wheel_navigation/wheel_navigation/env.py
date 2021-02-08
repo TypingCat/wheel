@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import torch
+import numpy as np
 
 from mlagents_envs.environment import UnityEnvironment
 
@@ -52,8 +53,11 @@ class Unity():
                 exp[agent]['done'] = False
         return exp
     
-    def set_command(self, cmd):
-        self.env.set_actions(self.behavior, cmd.detach().numpy())
+    def set_command(self, command):
+        cmd = command.tolist()
+        self.env.set_actions(
+            self.behavior,
+            np.array([[max(min(l, 1.), -1.), max(min(a, 1.), -1.)] for l, a in cmd]))
 
 class Batch:
     def __init__(self):
@@ -66,13 +70,13 @@ class Batch:
     def size(self):
         return sum([d.shape[0] for d in self.data])
 
-    def store(self, exp, act):
+    def store(self, exp, metadata):
         """Save experiences and wrap finished episodes"""
         # sample[ 0:40] = observation
-        # sample[40:41] = action
-        # sample[41:42] = reward
+        # sample[40:41] = reward
+        # sample[41:  ] = metadata
         for i, agent in enumerate(exp):
-            sample = torch.cat([exp[agent]['obs'], act[i:i+1].unsqueeze(1), exp[agent]['reward']], dim=1)
+            sample = torch.cat([exp[agent]['obs'], exp[agent]['reward'], metadata[i, :].unsqueeze(0)], dim=1)
             if agent not in self.temp.keys():
                 self.temp[agent] = sample
             else:
@@ -85,3 +89,8 @@ class Batch:
         episodes = self.data
         self.data = []
         return episodes
+
+def discount_cumsum(arr, discount_factor):
+    for i in range(len(arr)-2, -1, -1):
+        arr[i] += discount_factor * arr[i+1]
+    return arr

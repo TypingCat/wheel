@@ -8,14 +8,11 @@ from rclpy.node import Node
 
 from wheel_navigation.env import Unity, Batch
 
-class Brain(torch.nn.Module):
-    """Pytorch neural network model"""
-    ACTION = [[ 1., 1.], [ 1., 0.], [ 1., -1.],
-              [ 0., 1.], [ 0., 0.], [ 0., -1.],
-              [-1., 1.], [-1., 0.], [-1., -1.]]
+class MLP(torch.nn.Module):
+    """Multi-Layer Perceptron"""
     
     def __init__(self, num_input, num_output, num_hidden=40):
-        super(Brain, self).__init__()
+        super(MLP, self).__init__()
         self.fc1 = torch.nn.Linear(num_input, num_hidden)
         self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
         self.fc3 = torch.nn.Linear(num_hidden, num_output)
@@ -31,12 +28,18 @@ class SPG(Node):
 
     def __init__(self):
         super().__init__('wheel_navigation_spg')
-        self.brain = Brain(num_input=40, num_output=9)
+
+        # Set parameters
+        self.policy_std = torch.exp(torch.tensor([-0.5, -0.5]))
+        self.batch_size_max = 500
+
+        # Initialize network
+        self.brain = MLP(num_input=40, num_output=2)
         self.batch = Batch()
-        self.batch_size_max = 100
-        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.02)
+        self.optimizer = torch.optim.Adam(self.brain.parameters(), lr=0.01)
         print(self.brain)
         
+        # Connect to Unity
         self.get_logger().warning("Wait for Unity scene play")
         self.unity = Unity()
         self.get_logger().info("Unity environment connected")
@@ -55,12 +58,11 @@ class SPG(Node):
         # Set commands
         obs = torch.cat([exp[agent]['obs'] for agent in exp], dim=0)
         with torch.no_grad():
-            logit = self.brain(obs)
-            policy = torch.distributions.categorical.Categorical(logits=logit)
+            mu = self.brain(obs)
+            policy = torch.distributions.normal.Normal(mu, self.policy_std)
             act = policy.sample()
-            cmd = torch.tensor([Brain.ACTION[a] for a in act])
-        self.unity.set_command(cmd)
-        self.batch.store(exp, act)
+        self.unity.set_command(act)
+        self.batch.store(exp, act.unsqueeze(1))
         
         # Start learning
         print(f'\rBatch: {self.batch.size()}/{self.batch_size_max}', end='')
@@ -72,18 +74,20 @@ class SPG(Node):
 
     def learning(self, batch):
         """Training the brain using batch data"""
-        for episode in batch:    # Replace rewards with weights
-            episode[:, -1] = sum(episode[:, -1]) * torch.ones_like(episode[:, -1])
-        data = torch.cat(batch, dim=0)
-
-        # Calculate loss
-        logit = self.brain(data[:, 0:40])
-        policy = torch.distributions.categorical.Categorical(logits=logit)
-        logp = policy.log_prob(data[:, -2])
-        weight = data[:, -1]
-        loss = -(logp * weight).mean()
-
+        
+        # Replace reward with reward_sum
+        for episode in batch:
+            episode[:, 40:41] = sum(episode[:, -1]) * torch.ones(episode.shape[0], 1)
+        
         # Optimize the brain
+        data = torch.cat(batch, dim=0)
+        mu = self.brain(data[:, 0:40])
+        act, reward_sum = data[:, 41:], data[:, 40:41]
+
+        policy = torch.distributions.normal.Normal(mu, self.policy_std)        
+        logp = policy.log_prob(act).sum(axis=1)        
+        loss = -(logp * reward_sum).mean()
+
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

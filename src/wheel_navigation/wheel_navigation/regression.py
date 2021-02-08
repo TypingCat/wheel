@@ -10,11 +10,11 @@ from rclpy.node import Node
 
 from wheel_navigation.env import Unity
 
-class Brain(torch.nn.Module):
-    """Pytorch neural network model"""
+class MLP(torch.nn.Module):
+    """Multi-Layer Perceptron"""
     
     def __init__(self, num_input, num_output, num_hidden=40):
-        super(Brain, self).__init__()
+        super(MLP, self).__init__()
         self.fc1 = torch.nn.Linear(num_input, num_hidden)
         self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
         self.fc3 = torch.nn.Linear(num_hidden, num_output)
@@ -25,25 +25,12 @@ class Brain(torch.nn.Module):
         x = self.fc3(x)
         return x
 
-    def supervisor(target):
-        """Simple P-control that prioritizes angular velocity"""
-        distance = target[:, 0].tolist()
-        angle = target[:, 1].tolist()
-        
-        angular_ctrl = [np.sign(a)*min(abs(a), 1) for a in angle]
-        linear_weight = [math.cos(min(abs(a), 0.5*math.pi)) for a in angle]
-        linear_ctrl = [w*np.sign(d)*min(abs(d), 1) for w, d in zip(linear_weight, distance)]
-        
-        return torch.cat([
-            torch.tensor(linear_ctrl).unsqueeze(1),
-            torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
-            
 class Regression(Node):
     """Simple regression for test the learning environment"""
 
     def __init__(self):
         super().__init__('wheel_navigation_regression')
-        self.brain = Brain(num_input=40, num_output=2)
+        self.brain = MLP(num_input=40, num_output=2)
         self.batch = []
         self.batch_size_max = 60
         self.criterion = torch.nn.MSELoss()
@@ -84,19 +71,29 @@ class Regression(Node):
     def learning(self, batch):
         """Training the brain using batch data"""
         data = torch.cat(batch, dim=0)
-
-        # Calculate loss
-        target = data[:, 38:40]
-        act = data[:, 40:42]
-        advice = Brain.supervisor(target)
+        target, act = data[:, 38:40], data[:, 40:42]
+        advice = supervisor(target)
+        
         loss = self.criterion(act, advice)
         
-        # Optimize the brain
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
         return loss
 
+def supervisor(target):
+    """Simple P-control that prioritizes angular velocity"""
+    distance = target[:, 0].tolist()
+    angle = target[:, 1].tolist()
+    
+    angular_ctrl = [np.sign(a)*min(abs(a), 1) for a in angle]
+    linear_weight = [math.cos(min(abs(a), 0.5*math.pi)) for a in angle]
+    linear_ctrl = [w*np.sign(d)*min(abs(d), 1) for w, d in zip(linear_weight, distance)]
+    
+    return torch.cat([
+        torch.tensor(linear_ctrl).unsqueeze(1),
+        torch.tensor(angular_ctrl).unsqueeze(1)], dim=1).float()
+        
 def main(args=None):
     rclpy.init(args=args)
     node = Regression()
