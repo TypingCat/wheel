@@ -1,13 +1,25 @@
 # Wheel
 ROS2 package that develops wheeled mobile robot capabilities using reinforcement learning
 
+Moving toward the target is the basic ability of a mobile robot. The first step of this project is to train the agent to move the robot to the target. There are no obstacles, and the robot simply needs to go straight toward the target. The point is to implement algorithms and its environment for the agent to learn rules.
 
-## [First step: Go to target](https://github.com/finiel/wheel/issues/23)
-Moving toward the target is the basic ability of a mobile robot. The first step is to train the agent to move the robot to the target. The robot simply needs to go straight toward the target, and there are no special obstacles. The real problem is building simulation environments and creating learning algorithms. See issue [#4](https://github.com/finiel/wheel/issues/4) for details.
-
-The following is a simple demo video of the [regression](https://github.com/finiel/wheel/issues/24). These 60 agents are learning to move to the target. If an algorithm succeeds in this step, it is ready to go to the next step.
+The following is a simple demo video: There are 60 agents in Unity(right), and the acquired observations are published to ROS2. This returns next best actions which predicted by Multi-Layered Perceptron(MLP). At the same time, MLP is trained when enough data is accumulated. Its loss decreases over time(left).
 
 ![regression](https://user-images.githubusercontent.com/16618451/105570210-0fb09480-5d8b-11eb-9833-b22f0722a062.gif)
+
+
+## Algorithms
+### [Regression](https://github.com/TypingCat/wheel/issues/24)
+Regression is a subfield of supervised machine learning, not reinforcement learning. Nevertheless, it was implemented for learning environmental testing or use as a performance comparisons. This allowed the initial structure to be improved to make the system work. See issue [#4](https://github.com/TypingCat/wheel/issues/4) for details. The performance is good enough to learn to move to the target in 40 seconds, but it requires supervisor. In other words, problems that cannot be solved by classic path planning cannot be solved by regression.
+
+### [Simplest Policy Gradient(SPG)](https://github.com/TypingCat/wheel/issues/14)
+The purpose of reinforcement learning is to choose policies that maximize rewards. One of the reinforcement learning approaches, on-policy gradient, directly learns policy using fresh observations. Various techniques should be applied to policy gradient, but SPG implements only the core of them. It simply predicts linear and angular velocity from observations. This algorithm evolves into the following VPG and PPO.
+
+### [Vanilla Policy Gradient(VPG)](https://github.com/TypingCat/wheel/issues/27)
+The main idea of VPG is to learn behaviors that cause good rewards. Add value network and apply [Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438). This decays the reward over time. It changes the learning objective of the agent: in SPG, the reward is the same as long as the robot reaches its target. On the other hand, VPG needs to reach its target within a short time to achieve high rewards. Therefore the learning objective is changed from the collision avoidance path to the optimal path.
+
+### Proximal Policy Optimization(PPO)
+In progress
 
 
 ## Simple Usage
@@ -21,6 +33,7 @@ The following is a simple demo video of the [regression](https://github.com/fini
     ``` bash
     ros2 run wheel_navigation regression
     ros2 run wheel_navigation spg
+    ros2 run wheel_navigation vpg
     ```
 
 
@@ -42,7 +55,7 @@ The following is a simple demo video of the [regression](https://github.com/fini
     - `Omnisharp: Path` = lateset
 
 ``` bash
-git clone https://github.com/finiel/wheel.git
+git clone https://github.com/TypingCat/wheel.git
 cd wheel
 colcon build --symlink-install
 source install/local_setup.bash
