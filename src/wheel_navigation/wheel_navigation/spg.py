@@ -2,11 +2,12 @@
 
 import torch
 import time
-
 import rclpy
+
 from rclpy.node import Node
 
-from wheel_navigation.env import Unity, Batch
+from wheel_navigation.environment import Unity
+from wheel_navigation.agent import Batch
 
 class MLP(torch.nn.Module):
     """Multi-Layer Perceptron"""

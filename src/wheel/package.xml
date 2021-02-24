@@ -4,7 +4,7 @@
   <name>wheel</name>
   <version>0.0.0</version>
   <description>Main ROS2 package</description>
-  <maintainer email="fini@kakao.com">fini</maintainer>
+  <maintainer email="jinhong.p.noh@gmail.com">fini</maintainer>
   <license>GNU General Public License v2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

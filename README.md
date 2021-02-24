@@ -18,7 +18,7 @@ The purpose of reinforcement learning is to choose policies that maximize reward
 ### [Vanilla Policy Gradient(VPG)](https://github.com/TypingCat/wheel/issues/27)
 The main idea of VPG is to learn behaviors that cause good rewards. Add value network and apply [Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438). This decays the reward over time. It changes the learning objective of the agent: in SPG, the reward is the same as long as the robot reaches its target. On the other hand, VPG needs to reach its target within a short time to achieve high rewards. Therefore the learning objective is changed from the collision avoidance path to the optimal path.
 
-### Proximal Policy Optimization(PPO)
+### [Proximal Policy Optimization(PPO)](https://github.com/TypingCat/wheel/issues/29)
 In progress
 
 

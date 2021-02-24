@@ -3,8 +3,8 @@
 <package format="3">
   <name>wheel_navigation</name>
   <version>0.0.0</version>
-  <description>Navigation with deep reinforcement learning</description>
-  <maintainer email="fini@kakao.com">fini</maintainer>
+  <description>Developing mobile robot capabilities using reinforcement learning</description>
+  <maintainer email="jinhong.p.noh@gmail.com">fini</maintainer>
   <license>GNU General Public License v2.0</license>
 
   <depend>rclpy</depend>

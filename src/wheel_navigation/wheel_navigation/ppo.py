@@ -7,7 +7,7 @@ import rclpy
 from rclpy.node import Node
 
 from wheel_navigation.environment import Unity
-from wheel_navigation.agent import MLP, Batch, discount_cumsum
+from wheel_navigation.agent import Batch, discount_cumsum
 
 class MLP(torch.nn.Module):
     """Multi-Layer Perceptron"""

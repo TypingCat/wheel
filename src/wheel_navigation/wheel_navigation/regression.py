@@ -4,26 +4,12 @@ import torch
 import numpy as np
 import math
 import time
-
 import rclpy
+
 from rclpy.node import Node
 
-from wheel_navigation.env import Unity
-
-class MLP(torch.nn.Module):
-    """Multi-Layer Perceptron"""
-    
-    def __init__(self, num_input, num_output, num_hidden=40):
-        super(MLP, self).__init__()
-        self.fc1 = torch.nn.Linear(num_input, num_hidden)
-        self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
-        self.fc3 = torch.nn.Linear(num_hidden, num_output)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
+from wheel_navigation.environment import Unity
+from wheel_navigation.agent import MLP
 
 class Regression(Node):
     """Simple regression for test the learning environment"""
