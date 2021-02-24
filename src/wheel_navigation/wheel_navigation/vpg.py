@@ -9,21 +9,6 @@ from rclpy.node import Node
 from wheel_navigation.environment import Unity
 from wheel_navigation.agent import MLP, Batch, discount_cumsum
 
-class MLP(torch.nn.Module):
-    """Multi-Layer Perceptron"""
-    
-    def __init__(self, num_input, num_output, num_hidden=40):
-        super(MLP, self).__init__()
-        self.fc1 = torch.nn.Linear(num_input, num_hidden)
-        self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
-        self.fc3 = torch.nn.Linear(num_hidden, num_output)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
 class VPG(Node):
     """Vanilla Policy Gradient"""
 

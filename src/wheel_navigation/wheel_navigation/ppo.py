@@ -7,28 +7,13 @@ import rclpy
 from rclpy.node import Node
 
 from wheel_navigation.environment import Unity
-from wheel_navigation.agent import Batch, discount_cumsum
+from wheel_navigation.agent import MLP, Batch, discount_cumsum
 
-class MLP(torch.nn.Module):
-    """Multi-Layer Perceptron"""
-    
-    def __init__(self, num_input, num_output, num_hidden=40):
-        super(MLP, self).__init__()
-        self.fc1 = torch.nn.Linear(num_input, num_hidden)
-        self.fc2 = torch.nn.Linear(num_hidden, num_hidden)
-        self.fc3 = torch.nn.Linear(num_hidden, num_output)
-
-    def forward(self, x):
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-class VPG(Node):
-    """Vanilla Policy Gradient"""
+class PPO(Node):
+    """Proximal Policy Optimization"""
 
     def __init__(self):
-        super().__init__('wheel_navigation_vpg')
+        super().__init__('wheel_navigation_ppo')
 
         # Set parameters
         self.policy_std = torch.exp(torch.tensor([-0.5, -0.5]))
@@ -122,7 +107,7 @@ class VPG(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = VPG()
+    node = PPO()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
