@@ -19,7 +19,7 @@ The purpose of reinforcement learning is to choose policies that maximize reward
 The main idea of VPG is to learn behaviors that cause good rewards. Add value network and apply [Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438). This decays the reward over time. It changes the learning objective of the agent: in SPG, the reward is the same as long as the robot reaches its target. On the other hand, VPG needs to reach its target within a short time to achieve high rewards. Therefore the learning objective is changed from the collision avoidance path to the optimal path.
 
 ### [Proximal Policy Optimization(PPO)](https://github.com/TypingCat/wheel/issues/29)
-In progress
+Sample efficiency is an important issue for reinforcement learning. Trust Region Policy Optimization(TRPO) considers it using KL-divergence, but it's complex to solve. PPO solves this problem with first-order method that use a simple trick: clip. Basically the ratio of logp and old logp is used as weight, and it has a limit to prevent a big difference. On the other hand, one sample is repeatedly learned until KL-divergence changes by a certain value. Thanks to these features, PPO uses the information in the sample more efficiently than VPG.
 
 
 ## Simple Usage

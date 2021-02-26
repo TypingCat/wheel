@@ -81,10 +81,9 @@ class VPG(Node):
 
         # Optimize actor network
         data = torch.cat(batch, dim=0)
-        obs = data[:, 0:40]
-        mu = self.actor(obs)
-        act, adv = data[:, 41:43], data[:, -2]
+        obs, act, adv = data[:, 0:40], data[:, 41:43], data[:, -2]
 
+        mu = self.actor(obs)
         policy = torch.distributions.normal.Normal(mu, self.policy_std)
         logp = policy.log_prob(act).sum(axis=1)
         actor_loss = -(logp * adv).mean()

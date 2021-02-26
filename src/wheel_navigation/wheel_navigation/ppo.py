@@ -20,7 +20,10 @@ class PPO(Node):
         self.discount_gamma = 0.99
         self.discount_lamda = 0.95
         self.batch_size_max = 500
+        self.actor_optimizer_iter = 80
         self.critic_optimizer_iter = 80
+        self.clip_ratio = 0.2
+        self.max_kld_step = 0.015
 
         # Initialize networks
         self.actor = MLP(num_input=40, num_output=2)
@@ -81,18 +84,31 @@ class PPO(Node):
 
         # Optimize actor network
         data = torch.cat(batch, dim=0)
-        obs = data[:, 0:40]
-        mu = self.actor(obs)
-        act, adv = data[:, 41:43], data[:, -2]
-
-        policy = torch.distributions.normal.Normal(mu, self.policy_std)
-        logp = policy.log_prob(act).sum(axis=1)
-        actor_loss = -(logp * adv).mean()
-
-        self.actor_optimizer.zero_grad()
-        actor_loss.backward()
-        self.actor_optimizer.step()
+        obs, act, adv = data[:, 0:40], data[:, 41:43], data[:, -2]
         
+        with torch.no_grad():
+            mu = self.actor(obs)
+            policy = torch.distributions.normal.Normal(mu, self.policy_std)
+            logp_old = policy.log_prob(act).sum(axis=1)
+
+        for _ in range(self.actor_optimizer_iter):
+            mu = self.actor(obs)
+            policy = torch.distributions.normal.Normal(mu, self.policy_std)
+            logp = policy.log_prob(act).sum(axis=1)
+
+            # Early stopping by KL-divergence limit
+            kld = (logp_old - logp).mean().item()
+            if kld > self.max_kld_step: break
+
+            # PPO Clip
+            logp_ratio = torch.exp(logp - logp_old)
+            clip_adv = torch.clamp(logp_ratio, 1-self.clip_ratio, 1+self.clip_ratio) * adv
+            actor_loss = -(torch.min(logp_ratio * adv, clip_adv)).mean()
+
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+
         # Optimize critic
         ret = data[:, -1]
         critic_loss = torch.tensor([])
