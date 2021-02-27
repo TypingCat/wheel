@@ -21,6 +21,11 @@ The main idea of VPG is to learn behaviors that cause good rewards. Add value ne
 ### [Proximal Policy Optimization(PPO)](https://github.com/TypingCat/wheel/issues/29)
 Sample efficiency is an important issue for reinforcement learning. Trust Region Policy Optimization(TRPO) considers it using KL-divergence, but it's complex to solve. PPO solves this problem with first-order method that use a simple trick: clip. Basically the ratio of logp and old logp is used as weight, and it has a limit to prevent a big difference. On the other hand, one sample is repeatedly learned until KL-divergence changes by a certain value. Thanks to these features, PPO uses the information in the sample more efficiently than VPG.
 
+### [Deep Deterministic Policy Gradient(DDPG)](https://github.com/TypingCat/wheel/issues/30)
+Previous algorithms are entirely policy optimization approaches. On the other hand, DDPG is affected by Q-learning approach. The main contribution of DDPG is that it can be used in continuous space, unlike other Q-learning algorithms.
+
+In progress...
+
 
 ## Simple Usage
 - Control a mobile robot
